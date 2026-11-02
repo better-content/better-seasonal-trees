@@ -1,0 +1,18 @@
+{
+  "speciesId": "dtnatures_spirit:mahogany",
+  "habit": "TROPICAL",
+  "requiredMods": [
+    "dynamictrees"
+  ],
+  "optionalMods": [
+    "dtnatures_spirit"
+  ],
+  "leafOutStart": 0,
+  "leafOutDuration": 0.3333333333333333,
+  "shedStart": 11.5,
+  "shedEnd": 12,
+  "bloomStart": 0,
+  "bloomEnd": 0,
+  "autumnColor": "#BB8242",
+  "bloomVisual": "none"
+}

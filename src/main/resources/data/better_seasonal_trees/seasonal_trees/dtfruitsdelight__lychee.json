@@ -1,0 +1,18 @@
+{
+  "speciesId": "dtfruitsdelight:lychee",
+  "habit": "EVERGREEN",
+  "requiredMods": [
+    "dynamictrees"
+  ],
+  "optionalMods": [
+    "dtfruitsdelight"
+  ],
+  "leafOutStart": 0,
+  "leafOutDuration": 0,
+  "shedStart": 0,
+  "shedEnd": 0,
+  "bloomStart": 0,
+  "bloomEnd": 0.3333333333333333,
+  "autumnColor": "#FFFFFF",
+  "bloomVisual": "lychee"
+}

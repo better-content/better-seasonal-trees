@@ -1,0 +1,7 @@
+.gradle/
+build/
+evidence/
+run/
+logs/
+*.log
+*.hprof

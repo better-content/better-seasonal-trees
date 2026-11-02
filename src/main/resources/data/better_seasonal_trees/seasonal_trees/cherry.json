@@ -1,0 +1,13 @@
+{
+  "speciesId": "dynamictrees:cherry",
+  "habit": "TEMPERATE",
+  "requiredMods": ["dynamictrees"],
+  "leafOutStart": 0.3333333333333333,
+  "leafOutDuration": 0.3333333333333333,
+  "shedStart": 8.0,
+  "shedEnd": 9.0,
+  "bloomStart": 0.0,
+  "bloomEnd": 0.3333333333333333,
+  "autumnColor": "#D98552",
+  "bloomVisual": "cherry"
+}

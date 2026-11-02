@@ -1,0 +1,42 @@
+{
+  "status": "activated-experimental-playtest",
+  "defaultPolicy": "UNCHANGED",
+  "temperate": [
+    "dynamictrees:oak", "dynamictrees:swamp_oak", "dynamictrees:oak_undergrowth", "dynamictrees:dark_oak",
+    "dynamictrees:birch", "dynamictrees:tall_birch", "dynamictrees:apple_oak", "dynamictrees:cherry",
+    "dtnatures_spirit:aspen", "dtnatures_spirit:larch", "dtnatures_spirit:red_maple",
+    "dtnatures_spirit:orange_maple", "dtnatures_spirit:yellow_maple", "dtnatures_spirit:willow",
+    "dtnatures_spirit:blue_wisteria", "dtnatures_spirit:pink_wisteria",
+    "dtnatures_spirit:purple_wisteria", "dtnatures_spirit:white_wisteria",
+    "better_hexerei_dynamic_trees:willow", "better_hexerei_dynamic_trees:witch_hazel",
+    "dtfruitsdelight:pear", "dtfruitsdelight:peach", "dtfruitsdelight:hawberry",
+    "dtfruitsdelight:persimmon", "dtfruitsdelight:kiwi", "dtfruitsdelight:fig",
+    "dtquark:fiery_blossom", "dtquark:frosty_blossom", "dtquark:serene_blossom",
+    "dtquark:sunny_blossom", "dtquark:warm_blossom"
+  ],
+  "tropicalDry": [
+    "dynamictrees:acacia", "dtnatures_spirit:palo_verde", "dtnatures_spirit:mahogany",
+    "better_hexerei_dynamic_trees:mahogany"
+  ],
+  "evergreenBlossomVerifiedJarPaths": [
+    "dynamictrees:azalea", "dtnatures_spirit:olive", "dtnatures_spirit:joshua",
+    "dtfruitsdelight:orange", "dtfruitsdelight:mango", "dtfruitsdelight:lychee",
+    "dtfruitsdelight:mangosteen", "dtfruitsdelight:durian"
+  ],
+  "evergreenBlossomUnresolved": ["cinnamon"],
+  "explicitUnchangedVerifiedJarPaths": [
+    "dtnatures_spirit:ghaf", "dtnatures_spirit:saxaul", "dtnatures_spirit:coconut",
+    "dtfruitsdelight:bayberry"
+  ],
+  "explicitUnchangedUnresolved": ["clove"],
+  "excludedNamespaces": ["dtaether"],
+  "pinnedModRecords": [
+    {"file": "DynamicTrees-1.20.1-1.4.10.jar", "modId": "dynamictrees", "sha256": "3d5c1052bbf8a72e2087174039b530201c4ee9657b0391f2e1b130c85afd855f"},
+    {"file": "dtnatures_spirit-1.20.1-forge-1.3-all.jar", "modId": "dtnatures_spirit", "sha256": "b6293f7ef2fb7e478d51be1d0fadd13751018471de87cda296d7b301b6b5da38"},
+    {"file": "better-hexerei-dynamic-trees-1.0.1.jar", "modId": "better_hexerei_dynamic_trees", "sha256": "280ec6f926267b2dd258b9cdd9de01810dd95815a3a6355b869f051685f88341"},
+    {"file": "DynamicTreesFruitsDelight-1.20.1-1.0.0.jar", "modId": "dtfruitsdelight", "sha256": "429bc505975d749fd5096a0119479857834afaa0bf3928a3a4ca5c16398e2604"},
+    {"file": "DynamicTreesQuark-1.20.1-2.5.3.jar", "modId": "dtquark", "sha256": "1bdc83a523fd9b3d46e0d80eafbba8bb03c148133cd1f96c5b94b7058cec8344"},
+    {"file": "DynamicTreesPlus-1.20.1-1.2.2.jar", "modId": "dynamictreesplus", "sha256": "2860d999e169783f026dd333f30730e1cc07a4bcb7afb0ee76e13fc2bb6334da"},
+    {"file": "DynamicTreesAether-1.20.1-1.3.3.jar", "modId": "dtaether", "sha256": "fad05c708538cad4e787c8b2d179d653fbd0eaf482873c731457415fe8d170d0"}
+  ]
+}

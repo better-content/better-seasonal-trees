@@ -1,0 +1,23 @@
+# Better Seasonal Trees
+
+Minecraft 1.20.1, Forge 47.4.22, Java 17 (existing SDKMAN 17.0.17-tem at $HOME/.sdkman/candidates/java/17.0.17-tem; use ./gradlew), Dynamic Trees 1.4.10, Serene Seasons 9.1.0.2.
+
+## Work contract
+User approved the full seasonal addon. On 2026-11-02 at09:04 UTC they clarified the target: an experimental build ready for a sacrificial survival playthrough of the actual modpack, not exhaustive release qualification. Pilot seasonal-cycle and two-JVM partial-autumn proofs already obtained permit proceeding with requested feature coverage. Real leaf removal, living dormant wood, one-use randomized seven-day restoration and Codex-generated artwork remain required; no feedback repair loop. Finish production features and document known issues. The latest user clarification, relayed by the progress-audit coordinator at10:41 UTC, is **implementation and UNIT TESTS ONLY**. It supersedes the blanket testing halt only for focused, isolated unit tests and necessary compilation: no game/mod-loader bootstrap, integration/end-to-end/native tests, Forge GameTests, client/server/world launches, loader probes, smoke runs, visual harnesses or qualification campaigns. Do not invoke aggregate tasks that also run prohibited tests. Compilation/assembly is not gameplay verification. Do not deploy while completing this source batch. Stop storage redesign and stress campaigns. Historical gates are follow-up, not playtest prerequisites. Preserve failures honestly. No existing player worlds, fresh distribution or push.
+
+Full implementation requirements live in docs/implementation-contract.md. Record blockers honestly; compilation or synthetic tests are NOT native/visual acceptance. Never mark a gate passing with skipped/zero tests.
+
+## Parallel ownership
+All seasonal worker assignments below are historical and handed off; workers are released/idle. The latest unit-test permission does not reactivate them, restore old ownership or assign a new unit-test task. Obtain a new bounded assignment and claim before writing or running tests. Preserve shared resource coordination and the four-family-writer limit; do not duplicate another assignment.
+
+- /seasonal-coordinator (Herdr bettercontent wJ:p2A): build files, entrypoint, shared mixin config, native fixture source/test runner, acceptance reports; sole coordinated Gradle runner; native execution is currently prohibited.
+- /seasonal-core: src/main/java/com/bettercontent/seasonaltrees/runtime/**, scheduler/**, mixin/** and corresponding src/test/**; notify coordinator of required mixin names/hooks. No shared build/resources edits.
+- /seasonal-data: src/main/java/com/bettercontent/seasonaltrees/catalogue/**, catalogue resources, matching tests. The full48-profile catalogue is active; the pilot-only restriction and Gate A prerequisite are historical.
+- /seasonal-art: src/main/java/com/bettercontent/seasonaltrees/client/**, network/**, assets/**, art/** and scripts/art_*.py. ALL new art must come through Codex native image generation. Scripts may resize, crop, alpha-key and package, not draw/generate pixel art.
+
+No worker runs Gradle or test JVMs until coordinator grants a bounded run. Read claim files/live agents before changes and create own claim. Use /home/dev/.tmp for temporary data. No SDK installation needed. Keep game tests out of shipping JAR. Require real source identity metadata. Do not touch sibling mods or pack files.
+
+## Initial shared API
+Package com.bettercontent.seasonaltrees; entrypoint BetterSeasonalTrees.MOD_ID = "better_seasonal_trees".
+Catalogue owner provides immutable SpeciesProfile with speciesId, habit, leafOutStart/leafOutDuration (units 0..12 sub-seasons), shedStart/shedEnd, bloomStart/bloomEnd, autumnColor int, bloomVisual string; habit enum UNCHANGED, EVERGREEN, TEMPERATE, TROPICAL; Json parsing must validate. SeasonalCatalogue.profile(ResourceLocation), all(), revision(); atomic reload listener registered by coordinator. Pilot profiles birch leafOut0..1/3, cherry1/3..2/3, shed8..9 (year spring0 summer3 autumn6 winter9), spruce unchanged. No giant registry dependencies needed for these.
+Runtime owner exposes static SeasonalRuntime.register() for Forge event listeners; inspect(ServerLevel, BlockPos) for debug; development testing hooks must not be public production season overrides. Use Serene Seasons actual provider and typed/narrow Mixin access. Collaborate with data owner as necessary. Client art initially can use synced calendar plus pilot leaf identity; must not apply globally to decorative static leaves. Coordinate network contract with runtime owner, no reflection.

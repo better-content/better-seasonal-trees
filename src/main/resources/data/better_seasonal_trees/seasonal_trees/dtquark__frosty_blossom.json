@@ -1,0 +1,18 @@
+{
+  "speciesId": "dtquark:frosty_blossom",
+  "habit": "TEMPERATE",
+  "requiredMods": [
+    "dynamictrees"
+  ],
+  "optionalMods": [
+    "dtquark"
+  ],
+  "leafOutStart": 0,
+  "leafOutDuration": 0.3333333333333333,
+  "shedStart": 8,
+  "shedEnd": 9,
+  "bloomStart": 0,
+  "bloomEnd": 0.3333333333333333,
+  "autumnColor": "#B49C6B",
+  "bloomVisual": "frosty_blossom"
+}

@@ -1,0 +1,18 @@
+{
+  "speciesId": "better_hexerei_dynamic_trees:witch_hazel",
+  "habit": "TEMPERATE",
+  "requiredMods": [
+    "dynamictrees"
+  ],
+  "optionalMods": [
+    "better_hexerei_dynamic_trees"
+  ],
+  "leafOutStart": 0,
+  "leafOutDuration": 0.3333333333333333,
+  "shedStart": 8,
+  "shedEnd": 9,
+  "bloomStart": 8.5,
+  "bloomEnd": 9.5,
+  "autumnColor": "#D39B32",
+  "bloomVisual": "witch_hazel"
+}

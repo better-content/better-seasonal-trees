@@ -1,0 +1,15 @@
+{
+  "speciesId": "dynamictrees:acacia",
+  "habit": "TROPICAL",
+  "requiredMods": [
+    "dynamictrees"
+  ],
+  "leafOutStart": 0,
+  "leafOutDuration": 0.3333333333333333,
+  "shedStart": 6,
+  "shedEnd": 7,
+  "bloomStart": 0,
+  "bloomEnd": 0,
+  "autumnColor": "#B58A43",
+  "bloomVisual": "none"
+}

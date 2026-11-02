@@ -1,0 +1,13 @@
+{
+  "speciesId": "dynamictrees:spruce",
+  "habit": "UNCHANGED",
+  "requiredMods": ["dynamictrees"],
+  "leafOutStart": 0.0,
+  "leafOutDuration": 0.0,
+  "shedStart": 0.0,
+  "shedEnd": 0.0,
+  "bloomStart": 0.0,
+  "bloomEnd": 0.0,
+  "autumnColor": "#FFFFFF",
+  "bloomVisual": "none"
+}

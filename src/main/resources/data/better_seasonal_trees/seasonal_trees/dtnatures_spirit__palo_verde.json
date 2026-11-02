@@ -1,0 +1,18 @@
+{
+  "speciesId": "dtnatures_spirit:palo_verde",
+  "habit": "TROPICAL",
+  "requiredMods": [
+    "dynamictrees"
+  ],
+  "optionalMods": [
+    "dtnatures_spirit"
+  ],
+  "leafOutStart": 0,
+  "leafOutDuration": 0.3333333333333333,
+  "shedStart": 6,
+  "shedEnd": 7,
+  "bloomStart": 0,
+  "bloomEnd": 0.3333333333333333,
+  "autumnColor": "#D7B344",
+  "bloomVisual": "palo_verde"
+}

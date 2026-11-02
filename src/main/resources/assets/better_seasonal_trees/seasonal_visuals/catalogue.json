@@ -1,0 +1,113 @@
+{
+  "families": {
+    "generic": {
+      "greenLeaves": "better_seasonal_trees:block/seasonal/seasonal_green",
+      "autumnLeaves": "better_seasonal_trees:block/seasonal/seasonal_autumn",
+      "sparseLeaves": null, "fullLeaves": null, "branchFlowers": null, "petalSprite": null
+    },
+    "cherry": {
+      "greenLeaves": "better_seasonal_trees:block/cherry_leaves_green",
+      "autumnLeaves": "better_seasonal_trees:block/cherry_leaves_autumn",
+      "sparseLeaves": "better_seasonal_trees:block/cherry_leaves_blossom_sparse",
+      "fullLeaves": "better_seasonal_trees:block/cherry_leaves_blossom_full",
+      "branchFlowers": "better_seasonal_trees:block/cherry_branch_blossoms",
+      "petalSprite": "better_seasonal_trees:block/pink_petals"
+    },
+    "fruit": {
+      "greenLeaves": "better_seasonal_trees:block/seasonal/apple_green",
+      "autumnLeaves": "better_seasonal_trees:block/seasonal/seasonal_autumn",
+      "sparseLeaves": "better_seasonal_trees:block/seasonal/pink_blossom_sparse",
+      "fullLeaves": "better_seasonal_trees:block/seasonal/pink_blossom_full",
+      "branchFlowers": "better_seasonal_trees:block/seasonal/pink_branch_flowers",
+      "petalSprite": "better_seasonal_trees:block/cherry_petals"
+    },
+    "white": {
+      "greenLeaves": "better_seasonal_trees:block/seasonal/seasonal_green",
+      "autumnLeaves": "better_seasonal_trees:block/seasonal/seasonal_autumn",
+      "sparseLeaves": "better_seasonal_trees:block/seasonal/white_blossom_sparse",
+      "fullLeaves": "better_seasonal_trees:block/seasonal/white_blossom_full",
+      "branchFlowers": "better_seasonal_trees:block/seasonal/white_branch_flowers",
+      "petalSprite": "better_seasonal_trees:block/white_petals"
+    },
+    "yellow": {
+      "greenLeaves": "better_seasonal_trees:block/seasonal/seasonal_green",
+      "autumnLeaves": "better_seasonal_trees:block/seasonal/seasonal_autumn",
+      "sparseLeaves": "better_seasonal_trees:block/seasonal/yellow_blossom_sparse",
+      "fullLeaves": "better_seasonal_trees:block/seasonal/yellow_blossom_full",
+      "branchFlowers": "better_seasonal_trees:block/seasonal/yellow_branch_flowers",
+      "petalSprite": "better_seasonal_trees:block/yellow_petals"
+    },
+    "maple": {
+      "greenLeaves": "better_seasonal_trees:block/seasonal/maple_green",
+      "autumnLeaves": "better_seasonal_trees:block/seasonal/maple_autumn",
+      "sparseLeaves": null, "fullLeaves": null,
+      "branchFlowers": "better_seasonal_trees:block/seasonal/white_branch_flowers",
+      "petalSprite": "better_seasonal_trees:block/white_petals"
+    },
+    "blue_wisteria": {
+      "greenLeaves": "better_seasonal_trees:block/seasonal/seasonal_green",
+      "autumnLeaves": "better_seasonal_trees:block/seasonal/seasonal_autumn",
+      "sparseLeaves": "better_seasonal_trees:block/seasonal/blue_wisteria_sparse",
+      "fullLeaves": "better_seasonal_trees:block/seasonal/blue_wisteria_full",
+      "branchFlowers": "better_seasonal_trees:block/seasonal/blue_wisteria_branch_flowers",
+      "petalSprite": "better_seasonal_trees:block/blue_wisteria_petals"
+    },
+    "pink_wisteria": {
+      "greenLeaves": "better_seasonal_trees:block/seasonal/seasonal_green",
+      "autumnLeaves": "better_seasonal_trees:block/seasonal/seasonal_autumn",
+      "sparseLeaves": "better_seasonal_trees:block/seasonal/pink_blossom_sparse",
+      "fullLeaves": "better_seasonal_trees:block/seasonal/pink_blossom_full",
+      "branchFlowers": "better_seasonal_trees:block/seasonal/pink_branch_flowers",
+      "petalSprite": "better_seasonal_trees:block/pink_wisteria_petals"
+    },
+    "purple_wisteria": {
+      "greenLeaves": "better_seasonal_trees:block/seasonal/seasonal_green",
+      "autumnLeaves": "better_seasonal_trees:block/seasonal/seasonal_autumn",
+      "sparseLeaves": "better_seasonal_trees:block/seasonal/purple_wisteria_sparse",
+      "fullLeaves": "better_seasonal_trees:block/seasonal/purple_wisteria_full",
+      "branchFlowers": "better_seasonal_trees:block/seasonal/purple_wisteria_branch_flowers",
+      "petalSprite": "better_seasonal_trees:block/purple_wisteria_petals"
+    },
+    "white_wisteria": {
+      "greenLeaves": "better_seasonal_trees:block/seasonal/seasonal_green",
+      "autumnLeaves": "better_seasonal_trees:block/seasonal/seasonal_autumn",
+      "sparseLeaves": "better_seasonal_trees:block/seasonal/white_wisteria_sparse",
+      "fullLeaves": "better_seasonal_trees:block/seasonal/white_wisteria_full",
+      "branchFlowers": "better_seasonal_trees:block/seasonal/white_wisteria_branch_flowers",
+      "petalSprite": "better_seasonal_trees:block/white_petals"
+    },
+    "catkin": {
+      "greenLeaves": "better_seasonal_trees:block/seasonal/seasonal_green",
+      "autumnLeaves": "better_seasonal_trees:block/seasonal/seasonal_autumn",
+      "sparseLeaves": null, "fullLeaves": null,
+      "branchFlowers": "better_seasonal_trees:block/seasonal/willow_catkin_branch_flowers",
+      "petalSprite": "better_seasonal_trees:block/willow_catkin_petals"
+    },
+    "witch_hazel": {
+      "greenLeaves": "better_seasonal_trees:block/seasonal/seasonal_green",
+      "autumnLeaves": "better_seasonal_trees:block/seasonal/seasonal_autumn",
+      "sparseLeaves": null, "fullLeaves": null,
+      "branchFlowers": "better_seasonal_trees:block/seasonal/witch_hazel_branch_flowers",
+      "petalSprite": "better_seasonal_trees:block/yellow_petals"
+    },
+    "evergreen": {
+      "greenLeaves": "better_seasonal_trees:block/seasonal/evergreen_green",
+      "autumnLeaves": "better_seasonal_trees:block/seasonal/evergreen_green",
+      "sparseLeaves": "better_seasonal_trees:block/seasonal/evergreen_blossom_sparse",
+      "fullLeaves": "better_seasonal_trees:block/seasonal/evergreen_blossom_full",
+      "branchFlowers": "better_seasonal_trees:block/seasonal/evergreen_branch_flowers",
+      "petalSprite": "better_seasonal_trees:block/evergreen_petals"
+    }
+  },
+  "visuals": {
+    "apple": "fruit", "azalea": "white", "blue_wisteria": "blue_wisteria",
+    "cherry": "cherry", "durian": "evergreen", "fiery_blossom": "yellow",
+    "frosty_blossom": "blue_wisteria", "hawberry": "fruit",
+    "hexerei_willow_catkin": "catkin", "joshua": "white", "kiwi": "fruit",
+    "lychee": "white", "mango": "white", "mangosteen": "white", "maple": "maple",
+    "olive": "white", "orange": "yellow", "palo_verde": "yellow", "peach": "fruit",
+    "persimmon": "fruit", "pink_wisteria": "pink_wisteria", "purple_wisteria": "purple_wisteria",
+    "serene_blossom": "white", "sunny_blossom": "yellow", "warm_blossom": "pink_wisteria",
+    "white_wisteria": "white_wisteria", "willow_catkin": "catkin", "witch_hazel": "witch_hazel"
+  }
+}

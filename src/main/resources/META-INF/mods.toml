@@ -1,0 +1,32 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="All Rights Reserved"
+[[mods]]
+modId="better_seasonal_trees"
+version="${file.jarVersion}"
+displayName="Better Seasonal Trees"
+description='''Data-driven seasonal shedding and one-use foliage restoration for Dynamic Trees.'''
+[[dependencies.better_seasonal_trees]]
+modId="forge"
+mandatory=true
+versionRange="[47.4.22,48)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.better_seasonal_trees]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.20.2)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.better_seasonal_trees]]
+modId="dynamictrees"
+mandatory=true
+versionRange="[1.20.1-1.4.10]"
+ordering="AFTER"
+side="BOTH"
+[[dependencies.better_seasonal_trees]]
+modId="sereneseasons"
+mandatory=true
+versionRange="[9.1.0.2]"
+ordering="AFTER"
+side="BOTH"

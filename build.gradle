@@ -1,0 +1,211 @@
+plugins {
+    id 'java'
+    id 'net.minecraftforge.gradle' version '6.0.54'
+    id 'org.spongepowered.mixin' version '0.7.38'
+}
+group = 'com.bettercontent'
+version = project.property('mod_version')
+base { archivesName = 'better-seasonal-trees' }
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+sourceSets {
+    nativeFixture {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+    visualHarness {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+    persistenceFixture {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+    safetyFixture {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+    chunkFixture {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+configurations {
+    nativeFixtureImplementation.extendsFrom implementation
+    nativeFixtureRuntimeOnly.extendsFrom runtimeOnly
+    visualHarnessImplementation.extendsFrom implementation
+    visualHarnessRuntimeOnly.extendsFrom runtimeOnly
+    persistenceFixtureImplementation.extendsFrom implementation
+    persistenceFixtureRuntimeOnly.extendsFrom runtimeOnly
+    safetyFixtureImplementation.extendsFrom implementation
+    safetyFixtureRuntimeOnly.extendsFrom runtimeOnly
+    chunkFixtureImplementation.extendsFrom implementation
+    chunkFixtureRuntimeOnly.extendsFrom runtimeOnly
+}
+def attemptId = providers.gradleProperty('nativeAttempt').getOrElse(UUID.randomUUID().toString())
+if (!(attemptId ==~ /[A-Za-z0-9_-]{1,80}/)) throw new GradleException('Unsafe nativeAttempt')
+def attemptDir = file("evidence/native/${attemptId}")
+def visualId = providers.gradleProperty('visualAttempt').getOrElse(UUID.randomUUID().toString())
+if (!(visualId ==~ /[A-Za-z0-9_-]{1,80}/)) throw new GradleException('Unsafe visualAttempt')
+def visualDir = file("evidence/visual/${visualId}")
+def persistenceId = providers.gradleProperty('persistenceAttempt').getOrElse(UUID.randomUUID().toString())
+def persistenceStage = providers.gradleProperty('persistenceStage').getOrElse('write')
+def persistenceMode = providers.gradleProperty('persistenceMode').getOrElse('winter')
+if (!(persistenceId ==~ /[A-Za-z0-9_-]{1,80}/) || !(persistenceStage in ['write', 'read']) ||
+        !(persistenceMode in ['winter', 'partialAutumn', 'earlyBranchDamage']))
+    throw new GradleException('Unsafe persistence attempt/stage/mode')
+def persistenceDir = file("evidence/persistence/${persistenceId}")
+
+minecraft {
+    mappings channel: 'official', version: '1.20.1'
+    copyIdeResources = true
+    runs {
+        configureEach {
+            property 'forge.logging.console.level', 'info'
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            jvmArgs '-Xmx3G', '-Djava.io.tmpdir=/home/dev/.tmp'
+            mods { better_seasonal_trees { source sourceSets.main } }
+        }
+        client { workingDirectory file('evidence/client') }
+        visualClient {
+            parent minecraft.runs.client
+            client true
+            workingDirectory visualDir
+            property 'better_seasonal_trees.visualHarness', 'true'
+            mods { better_seasonal_trees { source sourceSets.visualHarness } }
+            args '--width', '1280', '--height', '720'
+        }
+        server {
+            workingDirectory persistenceDir
+            args '--nogui'
+            property 'better_seasonal_trees.persistence', 'true'
+            property 'better_seasonal_trees.persistenceStage', persistenceStage
+            property 'better_seasonal_trees.persistenceMode', persistenceMode
+            mods { better_seasonal_trees { source sourceSets.persistenceFixture } }
+        }
+        gameTestServer {
+            workingDirectory attemptDir
+            property 'forge.enabledGameTestNamespaces', 'better_seasonal_trees'
+            mods { better_seasonal_trees { source sourceSets.nativeFixture; source sourceSets.safetyFixture; source sourceSets.chunkFixture } }
+            args '--nogui', '--spawnPos', '0,100,0'
+        }
+    }
+}
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.minecraftforge.net' }
+    maven { url = 'https://cursemaven.com'; content { includeGroup 'curse.maven' } }
+}
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.20.1-47.4.22'
+    implementation fg.deobf('curse.maven:dynamic-trees-252818:7502488')
+    implementation fg.deobf('curse.maven:serene-seasons-291874:6398227')
+    implementation fg.deobf('curse.maven:glitchcore-955399:5787839')
+    runtimeOnly fg.deobf('curse.maven:patchouli-306770:7731017')
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+}
+mixin {
+    add sourceSets.main, 'better_seasonal_trees.refmap.json'
+    config 'better_seasonal_trees.mixins.json'
+}
+tasks.withType(JavaCompile).configureEach { options.release = 17 }
+test {
+    useJUnitPlatform()
+    jvmArgs '-Djava.io.tmpdir=/home/dev/.tmp'
+    testLogging { events 'passed', 'skipped', 'failed' }
+    afterSuite { desc, result ->
+        if (!desc.parent && (result.testCount == 0 || result.skippedTestCount > 0))
+            throw new GradleException('Unit tests must execute and cannot skip')
+    }
+}
+
+def generatedIdentity = layout.buildDirectory.dir('generated/sourceIdentity')
+tasks.register('sourceIdentity', Exec) {
+    outputs.upToDateWhen { false }
+    outputs.dir generatedIdentity
+    commandLine 'python3', '-B', 'scripts/source_identity.py', '--output',
+            generatedIdentity.get().file('META-INF/better-content-source.properties').asFile.absolutePath
+}
+sourceSets.main.resources.srcDir generatedIdentity
+tasks.register('prepareMixinResources', Copy) {
+    dependsOn 'compileJava'
+    from layout.buildDirectory.file('tmp/compileJava/compileJava-refmap.json')
+    into layout.buildDirectory.dir('generated/mixinResources')
+    rename { 'better_seasonal_trees.refmap.json' }
+}
+sourceSets.main.resources.srcDir layout.buildDirectory.dir('generated/mixinResources')
+tasks.named('processResources') { dependsOn 'sourceIdentity', 'prepareMixinResources' }
+jar {
+    // MixinGradle also contributes this same compiler output to JARs; the resource
+    // copy above is required for native run classpaths, which do not use the JAR.
+    filesMatching('better_seasonal_trees.refmap.json') { duplicatesStrategy = DuplicatesStrategy.EXCLUDE }
+    manifest { attributes('Implementation-Version': project.version, 'MixinConfigs': 'better_seasonal_trees.mixins.json') }
+    finalizedBy 'reobfJar'
+}
+tasks.register('stageRuntimeJar', Copy) {
+    dependsOn 'reobfJar'
+    from layout.buildDirectory.file('reobfJar/output.jar')
+    into layout.buildDirectory.dir('libs')
+    rename { "better-seasonal-trees-${project.version}.jar" }
+}
+assemble.dependsOn 'stageRuntimeJar'
+
+tasks.register('prepareNativeAttempt') {
+    doLast {
+        if (attemptDir.exists()) throw new GradleException("Refusing to reuse native attempt: ${attemptDir}")
+        attemptDir.mkdirs()
+        copy { from 'src/nativeFixture/fixture'; into attemptDir }
+        new File(attemptDir, 'server.properties').text = 'level-seed=8675309\nlevel-type=minecraft:flat\ngenerate-structures=false\nmax-tick-time=120000\nview-distance=6\nsimulation-distance=6\n' 
+        copy {
+            from 'src/nativeFixture/resources/gameteststructures', 'src/safetyFixture/resources/gameteststructures', 'src/chunkFixture/resources/gameteststructures'
+            into new File(attemptDir, 'gameteststructures')
+        }
+    }
+}
+tasks.matching { it.name.startsWith('prepareRunGameTestServer') }.configureEach { dependsOn 'prepareNativeAttempt' }
+tasks.register('prepareVisualAttempt') {
+    doLast {
+        if (visualDir.exists()) throw new GradleException("Refusing to reuse visual attempt: ${visualDir}")
+        def seedId = providers.gradleProperty('visualSeedAttempt').getOrElse('')
+        if (!(seedId ==~ /[A-Za-z0-9_-]{1,80}/)) throw new GradleException('Provide visualSeedAttempt from a stopped isolated native run')
+        def seedWorld = file("evidence/native/${seedId}/world")
+        if (!new File(seedWorld, 'level.dat').isFile()) throw new GradleException('Missing isolated native seed world')
+        visualDir.mkdirs()
+        // Copy only world settings, never old fixture chunks or seasonal records.
+        copy { from seedWorld; into new File(visualDir, 'saves/seasonal_visual_fixture'); include 'level.dat' }
+        copy { from 'src/nativeFixture/fixture'; into visualDir }
+        new File(visualDir, 'options.txt').text = 'renderDistance:8\nsimulationDistance:6\nmaxFps:30\nenableVsync:false\nguiScale:2\nrenderClouds:false\n'
+    }
+}
+tasks.matching { it.name.startsWith('prepareRunVisualClient') }.configureEach { dependsOn 'prepareVisualAttempt' }
+tasks.register('preparePersistenceAttempt') {
+    doLast {
+        if (persistenceStage == 'write') {
+            if (persistenceDir.exists()) throw new GradleException("Refusing existing persistence attempt: ${persistenceDir}")
+            persistenceDir.mkdirs()
+            copy { from 'src/nativeFixture/fixture'; into persistenceDir }
+            new File(persistenceDir, 'eula.txt').text = 'eula=true\n'
+            new File(persistenceDir, 'server.properties').text = 'level-seed=8675309\nlevel-type=minecraft:flat\ngenerate-structures=false\nmax-tick-time=120000\nview-distance=6\nsimulation-distance=6\nserver-ip=127.0.0.1\nserver-port=0\nonline-mode=false\n'
+        } else {
+            if (!new File(persistenceDir, 'success-write.json').isFile() ||
+                    !new File(persistenceDir, 'world/level.dat').isFile() ||
+                    new File(persistenceDir, 'read-started.marker').exists())
+                throw new GradleException('Read requires one completed write stage and cannot be retried in place')
+            new File(persistenceDir, 'read-started.marker').text = 'Two-process read stage started\n'
+        }
+    }
+}
+tasks.matching { it.name.startsWith('prepareRunServer') }.configureEach { dependsOn 'preparePersistenceAttempt' }
+tasks.register('runPersistenceServer') { dependsOn 'runServer' }
+tasks.register('verifyNativeLog', Exec) {
+    dependsOn 'runGameTestServer'
+    commandLine 'python3', '-B', 'scripts/verify_native.py', new File(attemptDir, 'logs/latest.log').absolutePath, '5'
+}
+tasks.register('verifyRuntimeJar', Exec) {
+    dependsOn 'stageRuntimeJar'
+    commandLine 'python3', '-B', 'scripts/verify_jar.py', "build/libs/better-seasonal-trees-${project.version}.jar"
+}
+tasks.register('verifyFast') { dependsOn 'check', 'verifyRuntimeJar' }
+tasks.register('verifyFull') { dependsOn 'verifyFast', 'verifyNativeLog' }

@@ -1,0 +1,18 @@
+{
+  "speciesId": "dtfruitsdelight:hawberry",
+  "habit": "TEMPERATE",
+  "requiredMods": [
+    "dynamictrees"
+  ],
+  "optionalMods": [
+    "dtfruitsdelight"
+  ],
+  "leafOutStart": 0,
+  "leafOutDuration": 0.3333333333333333,
+  "shedStart": 8,
+  "shedEnd": 9,
+  "bloomStart": 0,
+  "bloomEnd": 0.3333333333333333,
+  "autumnColor": "#C76C35",
+  "bloomVisual": "hawberry"
+}
