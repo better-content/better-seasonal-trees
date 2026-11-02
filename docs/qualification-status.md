@@ -1,8 +1,10 @@
 # Implementation and historical qualification status — NOT RELEASE-CERTIFIED
 
-Updated 2026-11-02 10:41 UTC. The latest user clarification is **implementation and UNIT TESTS ONLY** (relayed by the progress-audit coordinator). Focused isolated unit tests and necessary compilation are permitted. No game/mod-loader bootstrap, integration/end-to-end/native tests, Forge GameTests, client/server/world launches, loader probes, smoke runs, visual harnesses or qualification campaigns; no aggregate tasks that also launch prohibited tests. Historical release gates below are not prerequisites or execution authority.
+Updated 2026-11-02 13:29 UTC. The latest user clarification is **implementation and UNIT TESTS ONLY** (relayed by the progress-audit coordinator). Focused isolated unit tests and necessary compilation are permitted. No game/mod-loader bootstrap, integration/end-to-end/native tests, Forge GameTests, client/server/world launches, loader probes, smoke runs, visual harnesses or qualification campaigns; no aggregate tasks that also launch prohibited tests. Historical release gates below are not prerequisites or execution authority.
 
-Current task state: production implementation and compile-only artifact handoff are complete. Seasonal workers are released/idle; no new unit-test assignment or run has been made by this clarification. Historical ownership does not reactivate automatically. Shared resource coordination and the four-family-writer limit remain in force.
+Current task state: the spring-generation extension is implemented at source and compiled with21/21 focused isolated tests passing. GPT-6 runtime worker w11:pF and test worker w11:pG have handed off their changes; coordinator wJ:p2A integrated the three mixins and exact config change. Old core/data/art workers remain released. Shared resource coordination and the four-family-writer limit remain in force; historical assignments do not authorize self-resume.
+
+The pack's `config/sereneseasons/seasons.toml` starting_sub_season was changed2 ->1 for new-world early spring only. Normal DT FEATURES generation records exact new cells per chunk and initializes foliage on the main thread before the first client chunk packet. Geometry-derived bounds replace the arbitrary8,192/65,536 cutoffs; unsupported exact leaves are still filtered but never gain repair authority. An unexpectedly unavailable required clock aborts publication instead of guessing a phase. See `spring-generation.md` for the pinned source ordering, excluded/unsupported paths and persistence limitations. No native/gameplay/visual evidence was produced. The earlier assembled JAR does NOT include this extension, and no replacement JAR was packaged/installed. No loader/world/native/visual/smoke run, deployment, manifest refresh, commit/push or player-world changes are authorized.
 
 ## Current implementation
 
@@ -11,12 +13,15 @@ Current task state: production implementation and compile-only artifact handoff 
 - These newer full-catalogue changes are **not verified** by the earlier pilot results. Compilation/assembly must not be confused with gameplay acceptance.
 - True per-chunk storage, production-window stress, broad compatibility and remaining damage/reload qualification are deferred follow-up, not new implementation gates. World-level SavedData and bounded fail-closed visual snapshots remain known limitations.
 - **Compile-only assembly succeeded**: `evidence/build/playtest-assembly01.log`, command `./gradlew assemble`. No test/check/verify/native/loader/smoke task ran. Artifact: `build/libs/better-seasonal-trees-0.1.0.jar`,236,740 bytes, SHA256 `a5cd5118ace48fb18f983441ecf985c827c0553e0fcc302bbd678942202b8809`. The compiler warned that the explicit production SRG animateTick alias is absent from its userdev target; the generated refmap contains the native particle utility mapping. Actual client application remains unrun.
-- No pack deployment, existing player-world changes, fresh distribution or push. The artifact is experimental; only separately assigned isolated unit testing is permitted. No additional tests have run since the compile-only handoff.
+- No pack deployment, existing player-world changes, fresh distribution or push. The later exact early-spring pack config edit is the sole authorized pack-source change. The older artifact is experimental and predates spring generation. Subsequent evidence is limited to the three explicitly selected isolated unit classes and compilation, as recorded below.
 
 ## Evidence ledger
 
 | Attempt | Result and scope |
 |---|---|
+| spring-birth01 | Compilation +18/18 isolated units PASS; initial spring generation checkpoint, superseded by lifecycle/capacity fixes. No game or loader launch. |
+| spring-birth02 | Compilation +20/20 isolated units PASS; null-profile/disabled-calendar retirement and pre-ledger root-header invalidation. Superseded by geometry/support correction; arbitrary capacity fallback was NOT accepted. |
+| spring-birth03 | **Compilation +21/21 isolated units PASS**, zero failures/errors/skips, unchanged before/after source/test hashes. Includes valid8,193-leaf payload, actual geometry/duplicate/type bounds and unsupported terminal intent. Normal pre-publication path is source-supported only; no native/visual/persistence acceptance. |
 | pilot03 | 13 unit tests passed; native launch failed because Dynamic Trees version metadata uses `1.20.1-1.4.10`, not `1.4.10`. |
 | pilot04–05 | Native server starts; fixture birch has no leaves. Added generation diagnostics. |
 | pilot06 | Alternative bounds rejected native generation; not gameplay evidence. |

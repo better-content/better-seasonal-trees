@@ -4,6 +4,12 @@ Experimental seasonal foliage and blossom addon for **Minecraft 1.20.1 / Forge 4
 
 The current implementation target is a **sacrificial survival playthrough of the modpack**, not a release-certified build. The full-catalogue production source was compiled and assembled on2026-11-02; the latest user direction permits implementation and focused isolated unit tests only. Integration/native testing, game/mod-loader launches, loader probes and smoke runs remain prohibited. Earlier pilot evidence does not verify this newer implementation.
 
+## New-world spring initialization
+
+The pack now defaults new worlds to **early spring** (`starting_sub_season = 1`); existing saved calendars are not reset. Newly generated eligible DT foliage is initialized before its chunk's first client packet—not rendered leafy and stripped on a later tick. Early-spring trees start bare as their species schedule requires; mid-window generation has the due leaf fraction, summer remains leafy, and partial autumn/winter use the corresponding seasonal state. Evergreen and unchanged species remain native; tropical trees use their actual biome/local calendar.
+
+This is generation-only provenance, never reconstruction of old or player-damaged trees. Source compilation and **21 isolated unit tests pass**. First visibility and native behavior have not been tested in-game. See `docs/spring-generation.md` for the source timing argument, finite geometry bounds, one-use rules and limitations. **The older assembled JAR below predates this extension; no new JAR was packaged or installed.**
+
 ## Behaviour
 
 - Deciduous trees physically lose their native Dynamic Trees leaves. There are no invisible leaf blocks and seasonal removal produces no leaf loot.
@@ -29,7 +35,7 @@ JAVA_HOME="$HOME/.sdkman/candidates/java/17.0.17-tem" \
 TMPDIR="$HOME/.tmp" ./gradlew assemble
 ```
 
-The assembled runtime artifact is `build/libs/better-seasonal-trees-0.1.0.jar` (236,740 bytes; SHA256 `a5cd5118ace48fb18f983441ecf985c827c0553e0fcc302bbd678942202b8809`). Compilation/assembly is not gameplay verification. Only isolated unit tests without game/mod-loader bootstrap and necessary compilation are permitted. Do not run historical integration/native, Forge GameTest, visual or smoke tasks, or aggregate tasks that invoke them. The clarification does not assign new work to released workers.
+The earlier, pre-spring-initialization runtime artifact is `build/libs/better-seasonal-trees-0.1.0.jar` (236,740 bytes; SHA256 `a5cd5118ace48fb18f983441ecf985c827c0553e0fcc302bbd678942202b8809`). Compilation/assembly is not gameplay verification. Only isolated unit tests without game/mod-loader bootstrap and necessary compilation are permitted. Do not run historical integration/native, Forge GameTest, visual or smoke tasks, or aggregate tasks that invoke them. The clarification does not assign new work to released workers.
 
 The mod is intended for both client and server. Keep their versions matched. This repository does not automatically deploy the artifact into the modpack.
 

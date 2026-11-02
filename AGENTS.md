@@ -7,15 +7,26 @@ User approved the full seasonal addon. On 2026-11-02 at09:04 UTC they clarified 
 
 Full implementation requirements live in docs/implementation-contract.md. Record blockers honestly; compilation or synthetic tests are NOT native/visual acceptance. Never mark a gate passing with skipped/zero tests.
 
+## Spring-generation extension — authorized 2026-11-02 11:51 UTC
+Source/integration handoff completed13:29 UTC: bounded compilation plus21 isolated units pass (`evidence/build/spring-birth03/`), no game/native/visual acceptance or new JAR packaging. `docs/spring-generation.md` records the pinned pre-publication path, geometry-derived limits, terminal unsupported intents and exceptional clock policy. Existing runtime64/2048 budgets remain; synchronous initial generation work is separately bounded by actual chunk geometry.
+The user explicitly authorized newly generated eligible deciduous trees to begin with season-correct foliage, including bare early spring and gradual existing species-specific seven-day leaf-out. This is generation-only provenance, not a repair/reconstruction allowance for old, stripped or burnt trees. Ordinary discovery/chunk reload must not mint new opportunities. Preserve actual intended states, idempotence/restart safety, native support, branches, yields, obstructions and budgets; use a safe worldgen/server boundary. The subsequent HARD user requirement forbids visible leaf generation followed by stripping: apply season-correct foliage BEFORE chunk publication/first visibility, with safely persisted immutable intended-canopy metadata. An event name or pure unit test is not timing proof. A later tick stripping queue alone is unacceptable; report actual blockers, never downgrade to that fallback. Summer-generated trees must not all start bare. Evergreen/UNCHANGED remain native; tropical profiles use the actual eligible biome's wet/dry calendar. Reuse existing blossoms; no storage redesign.
+
+Only `/home/dev/better-content-modpack/config/sereneseasons/seasons.toml` may change in the pack: `starting_sub_season=2` to `1` for NEW worlds. Never reset an existing calendar. No JAR installation/deployment/manifest refresh/distribution/commit/push or player-world changes. Compile and isolated units only, under `/home/dev/.tmp/better-content-gradle.lock`, `--offline --no-daemon --max-workers=2`. No aggregate tasks invoking prohibited native/integration/loader/visual runs.
+
 ## Parallel ownership
-All seasonal worker assignments below are historical and handed off; workers are released/idle. The latest unit-test permission does not reactivate them, restore old ownership or assign a new unit-test task. Obtain a new bounded assignment and claim before writing or running tests. Preserve shared resource coordination and the four-family-writer limit; do not duplicate another assignment.
+Handed-off GPT-6 assignments for the spring extension (no further edits/runs without a new bounded task):
+- /seasonal-coordinator, bettercontent wJ:p2A: shared build/entrypoint/mixin resources/docs and exact pack config above; sole bounded compile/unit runner.
+- /seasonal-spring-runtime, bettercontent w11:pF: runtime/**, scheduler/**, mixin/** Java and generation-only ledger changes. Publish pure helper signatures to test owner.
+- /seasonal-spring-tests, bettercontent w11:pG: src/test/** only, isolated units; no production edits.
+
+Old seasonal-core/data/art assignments below are historical, released and must not be dispatched. Preserve resource coordination and the four-family-writer limit; do not duplicate another assignment.
 
 - /seasonal-coordinator (Herdr bettercontent wJ:p2A): build files, entrypoint, shared mixin config, native fixture source/test runner, acceptance reports; sole coordinated Gradle runner; native execution is currently prohibited.
 - /seasonal-core: src/main/java/com/bettercontent/seasonaltrees/runtime/**, scheduler/**, mixin/** and corresponding src/test/**; notify coordinator of required mixin names/hooks. No shared build/resources edits.
 - /seasonal-data: src/main/java/com/bettercontent/seasonaltrees/catalogue/**, catalogue resources, matching tests. The full48-profile catalogue is active; the pilot-only restriction and Gate A prerequisite are historical.
 - /seasonal-art: src/main/java/com/bettercontent/seasonaltrees/client/**, network/**, assets/**, art/** and scripts/art_*.py. ALL new art must come through Codex native image generation. Scripts may resize, crop, alpha-key and package, not draw/generate pixel art.
 
-No worker runs Gradle or test JVMs until coordinator grants a bounded run. Read claim files/live agents before changes and create own claim. Use /home/dev/.tmp for temporary data. No SDK installation needed. Keep game tests out of shipping JAR. Require real source identity metadata. Do not touch sibling mods or pack files.
+No worker runs Gradle or test JVMs until coordinator grants a bounded run. Read claim files/live agents before changes and create own claim. Use /home/dev/.tmp for temporary data. No SDK installation needed. Keep game tests out of shipping JAR. Require real source identity metadata. Do not touch sibling mods or pack files except the coordinator's exact starting_sub_season change above.
 
 ## Initial shared API
 Package com.bettercontent.seasonaltrees; entrypoint BetterSeasonalTrees.MOD_ID = "better_seasonal_trees".

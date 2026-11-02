@@ -29,7 +29,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 /** A ticket exists only after a successful seasonal setBlock. Absence is never a repair request. */
 public final class SeasonalLedger extends SavedData {
     public static final String ID = "better_seasonal_trees_tickets";
-    public static final int SCHEMA_VERSION = 7;
+    public static final int SCHEMA_VERSION = 8;
     public static final int MAX_MANAGED_BRANCHES_PER_TREE = 16384;
     public enum Outcome { PENDING, RESTORED, OBSTRUCTED, UNSUPPORTED, UNSUITABLE, INVALID_STATE, UNKNOWN_LEGACY }
     public static final int LOCATION_REJECTED = 1, LIGHT_REJECTED = 2, HYDRATION_REJECTED = 4;
@@ -38,6 +38,7 @@ public final class SeasonalLedger extends SavedData {
         public final UUID incarnation;
         public final ResourceLocation species;
         public long shedCycle = Long.MIN_VALUE;
+        public boolean generated;
         public long timingCycle = Long.MIN_VALUE;
         public double shedStart, shedEnd, leafOutStart, leafOutDuration;
         public SpeciesProfile.Habit timingHabit = SpeciesProfile.Habit.UNCHANGED;
@@ -89,6 +90,8 @@ public final class SeasonalLedger extends SavedData {
         }
     }
     final Map<Long, Tree> trees = new LinkedHashMap<>();
+    /** A removed generated root must never re-admit an old leaf-chunk marker. */
+    private final Set<UUID> removedGenerations = new LinkedHashSet<>();
     private final Map<Long, Set<Long>> pendingTicketOwners = new LinkedHashMap<>();
     private final Map<Long, Set<Long>> managedBranchOwners = new LinkedHashMap<>();
     long cycle;
@@ -100,10 +103,29 @@ public final class SeasonalLedger extends SavedData {
         return level.getDataStorage().computeIfAbsent(SeasonalLedger::load, SeasonalLedger::new, ID);
     }
     public Tree find(BlockPos root) { return trees.get(root.asLong()); }
+    public boolean removedGeneration(UUID id) { return removedGenerations.contains(id); }
+    public void tombstoneGeneration(UUID id) {
+        if (removedGenerations.add(id)) setDirty();
+        for (Tree tree : List.copyOf(trees.values()))
+            if (tree.generated && tree.incarnation.equals(id)) forget(tree.root);
+    }
+    /** Only an exact DT worldgen receipt can install this generation identity. */
+    public Tree admitGenerated(BlockPos root, ResourceLocation species, UUID generation) {
+        if (removedGenerations.contains(generation)) return null;
+        Tree existing = find(root);
+        if (existing != null) return existing.incarnation.equals(generation) && existing.species.equals(species)
+                ? existing : null;
+        Tree born = new Tree(root, generation, species);
+        born.generated = true;
+        trees.put(root.asLong(), born);
+        setDirty();
+        return born;
+    }
     public Tree ensure(ServerLevel level, BlockPos root, ResourceLocation species) {
         Tree prior = trees.get(root.asLong());
         if (prior != null && prior.species.equals(species)) return prior;
         if (prior != null) {
+            if (prior.generated) removedGenerations.add(prior.incarnation);
             for (Ticket ticket : prior.tickets.values()) unindex(ticket);
             unindexBranches(prior);
         }
@@ -113,6 +135,7 @@ public final class SeasonalLedger extends SavedData {
     public void forget(BlockPos root) {
         Tree removed = trees.remove(root.asLong());
         if (removed != null) {
+            if (removed.generated) removedGenerations.add(removed.incarnation);
             for (Ticket ticket : removed.tickets.values()) unindex(ticket);
             unindexBranches(removed);
             setDirty();
@@ -276,6 +299,10 @@ public final class SeasonalLedger extends SavedData {
         int schema = tag.getInt("schemaVersion");
         if (schema > SCHEMA_VERSION) throw new IllegalArgumentException("Unsupported seasonal ledger schema " + schema);
         ledger.cycle = tag.getLong("cycle"); ledger.lastCycleTick = tag.getInt("lastCycleTick");
+        if (schema >= 8) for (Tag dead : tag.getList("removedGenerations", Tag.TAG_COMPOUND)) {
+            CompoundTag id = (CompoundTag) dead;
+            if (id.hasUUID("id")) ledger.removedGenerations.add(id.getUUID("id"));
+        }
         ledger.lastCycleDuration = tag.getInt("lastCycleDuration"); ledger.lastGameTick = tag.getLong("lastGameTick");
         for (Tag value : tag.getList("trees", Tag.TAG_COMPOUND)) {
             CompoundTag treeTag = (CompoundTag) value;
@@ -283,6 +310,7 @@ public final class SeasonalLedger extends SavedData {
             if (species == null || !treeTag.hasUUID("incarnation")) continue;
             Tree tree = new Tree(BlockPos.of(treeTag.getLong("root")), treeTag.getUUID("incarnation"), species);
             tree.shedCycle = treeTag.getLong("shedCycle");
+            tree.generated = schema >= 8 && treeTag.getBoolean("generated");
             if (schema >= 5) {
                 tree.planCycle = treeTag.getLong("planCycle");
                 tree.planComplete = treeTag.getBoolean("planComplete");
@@ -393,6 +421,11 @@ public final class SeasonalLedger extends SavedData {
     }
     @Override public CompoundTag save(CompoundTag tag) {
         tag.putInt("schemaVersion", SCHEMA_VERSION);
+        ListTag removed = new ListTag();
+        for (UUID id : removedGenerations) {
+            CompoundTag dead = new CompoundTag(); dead.putUUID("id", id); removed.add(dead);
+        }
+        tag.put("removedGenerations", removed);
         tag.putLong("cycle", cycle); tag.putInt("lastCycleTick", lastCycleTick);
         tag.putInt("lastCycleDuration", lastCycleDuration); tag.putLong("lastGameTick", lastGameTick);
         ListTag treesTag = new ListTag();
@@ -400,6 +433,7 @@ public final class SeasonalLedger extends SavedData {
             CompoundTag t = new CompoundTag();
             t.putLong("root", tree.root.asLong()); t.putUUID("incarnation", tree.incarnation);
             t.putString("species", tree.species.toString()); t.putLong("shedCycle", tree.shedCycle);
+            t.putBoolean("generated", tree.generated);
             t.putLong("planCycle", tree.planCycle); t.putBoolean("planComplete", tree.planComplete);
             t.putInt("planSize", tree.planSize);
             t.putLong("timingCycle", tree.timingCycle);

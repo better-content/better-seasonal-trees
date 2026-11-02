@@ -13,6 +13,7 @@ import java.util.PriorityQueue;
 import java.util.Set;
 
 import com.bettercontent.seasonaltrees.catalogue.SeasonalCatalogue;
+import com.ferreusveritas.dynamictrees.event.SpeciesPostGenerationEvent;
 import com.bettercontent.seasonaltrees.catalogue.SpeciesProfile;
 import com.bettercontent.seasonaltrees.network.SeasonalNetwork;
 import com.bettercontent.seasonaltrees.scheduler.SeasonClock;
@@ -90,13 +91,21 @@ public final class SeasonalRuntime {
         if (!registered) {
             SeasonalRuntimeConfig.register();
             MinecraftForge.EVENT_BUS.register(SeasonalRuntime.class);
+            MinecraftForge.EVENT_BUS.register(GenerationCanopyData.class);
             registered = true;
         }
     }
 
+    /** DT's post-generation callback runs before chunk promotion; only exact worker writes are captured. */
+    @SubscribeEvent public static void onGenerated(SpeciesPostGenerationEvent event) {
+        GeneratedTreeWrites.afterGeneration(event);
+    }
     @SubscribeEvent public static void onChunkLoad(ChunkEvent.Load event) {
-        if (event.getLevel() instanceof ServerLevel level && event.getChunk() instanceof LevelChunk chunk)
+        if (event.getLevel() instanceof ServerLevel level && event.getChunk() instanceof LevelChunk chunk) {
+            // Pinned ChunkMap posts this from its main-thread mailbox before playerLoadedChunk sends a packet.
+            GenerationCanopyData.admit(level, chunk);
             work(level).chunks.addLast(new ChunkScan(chunk));
+        }
     }
     /** Admit player-placed native root blocks immediately; DT tree generation is also caught by dormantRoot. */
     @SubscribeEvent public static void onRootPlaced(BlockEvent.EntityPlaceEvent event) {
@@ -162,7 +171,9 @@ public final class SeasonalRuntime {
     }
     /** BlockBehaviour.onRemove observes root-to-air-to-same-root replacement without a break event. */
     public static void onRootReplaced(ServerLevel level, BlockPos rootPos) {
-        SeasonalLedger.get(level).forget(rootPos);
+        SeasonalLedger ledger = SeasonalLedger.get(level);
+        GenerationCanopyData.invalidateRootHeader(level, rootPos, ledger);
+        ledger.forget(rootPos);
         RootWork root = work(level).roots.get(rootPos.asLong());
         if (root != null) root.invalidateTopology(level);
     }
@@ -1052,14 +1063,17 @@ public final class SeasonalRuntime {
                     SupportStatus support = supportConnected(level, tree, ticket);
                     if (support == SupportStatus.DEFER) { deferred.add(ticket); continue; }
                     if (!validSupport || support == SupportStatus.INVALID) {
-                        ledger.resolve(ticket, SeasonalLedger.Outcome.UNSUPPORTED); continue;
+                        ledger.resolve(ticket, SeasonalLedger.Outcome.UNSUPPORTED);
+                        GenerationCanopyData.resolved(level, ticket); continue;
                     }
                     if (!present.isAir() || !present.getFluidState().isEmpty()) {
-                        ledger.resolve(ticket, SeasonalLedger.Outcome.OBSTRUCTED); continue;
+                        ledger.resolve(ticket, SeasonalLedger.Outcome.OBSTRUCTED);
+                        GenerationCanopyData.resolved(level, ticket); continue;
                     }
                 if (!(ticket.state.getBlock() instanceof DynamicLeavesBlock leavesBlock)
                         || expectedSpecies == null || !expectedSpecies.isValidLeafBlock(leavesBlock)) {
-                        ledger.resolve(ticket, SeasonalLedger.Outcome.INVALID_STATE); continue;
+                        ledger.resolve(ticket, SeasonalLedger.Outcome.INVALID_STATE);
+                        GenerationCanopyData.resolved(level, ticket); continue;
                     }
                     boolean neighborsLoaded = true;
                     for (Direction direction : Direction.values()) {
@@ -1076,11 +1090,13 @@ public final class SeasonalRuntime {
                             | (survivalLight ? 0 : SeasonalLedger.LIGHT_REJECTED)
                             | (hydrated ? 0 : SeasonalLedger.HYDRATION_REJECTED);
                     if (rejectionMask != 0) {
-                        ledger.resolve(ticket, SeasonalLedger.Outcome.UNSUITABLE, rejectionMask); continue;
+                        ledger.resolve(ticket, SeasonalLedger.Outcome.UNSUITABLE, rejectionMask);
+                        GenerationCanopyData.resolved(level, ticket); continue;
                     }
                     if (!mutate()) { deferred.add(ticket); return; }
                     if (level.setBlock(ticket.pos, ticket.state, 2)) {
                         ledger.resolve(ticket, SeasonalLedger.Outcome.RESTORED);
+                        GenerationCanopyData.resolved(level, ticket);
                         cache(level, ticket.pos);
                     } else deferred.add(ticket);
                 }
