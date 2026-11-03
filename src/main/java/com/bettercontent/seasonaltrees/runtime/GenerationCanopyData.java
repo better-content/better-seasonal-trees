@@ -112,7 +112,10 @@ public final class GenerationCanopyData {
         // Every exact new native leaf is an initialization intent. Only leaves reachable from
         // new branch writes by positive native hydration earn later restoration authority.
         Map<BlockPos, BlockPos> supports = supportPaths(region, species, root, writes, exactLeaves);
-        Map<Long, Integer> depths = new HashMap<>();
+        // Native hydration is not a topological distance: equal-hydration neighbors can
+        // still form a parent/child path. Rank by the actual root-owned support tree so
+        // a child never survives initial shedding after its required parent disappears.
+        Map<BlockPos, Integer> supportDepths = supportDepths(supports, exactLeaves);
         List<CompoundTag> ranked = new java.util.ArrayList<>();
         for (var candidate : exactLeaves.entrySet()) {
             BlockPos pos = candidate.getKey();
@@ -129,16 +132,17 @@ public final class GenerationCanopyData {
             item.put("state", encode(state));
             item.put("supportState", encode(restorable ? region.getBlockState(support) : Blocks.AIR.defaultBlockState()));
             item.putInt("status", 0); // pending: never infer removal from a later chunk scan
-            depths.put(pos.asLong(), 5 - state.getValue(LeavesBlock.DISTANCE));
             ranked.add(item);
             additions.computeIfAbsent(region.getChunk(pos.getX() >> 4, pos.getZ() >> 4),
                     ignored -> new ListTag()).add(item);
         }
         ranked.sort((a, b) -> {
             long posA = a.getLong("pos"), posB = b.getLong("pos");
-            return SeasonalSchedule.compareOuterFirst(depths.get(posA),
+            return SeasonalSchedule.compareOuterFirst(
+                    supportDepths.getOrDefault(BlockPos.of(posA), Integer.MAX_VALUE),
                     SeasonClock.fraction(generation.getMostSignificantBits(), posA, 0), posA,
-                    depths.get(posB), SeasonClock.fraction(generation.getMostSignificantBits(), posB, 0), posB);
+                    supportDepths.getOrDefault(BlockPos.of(posB), Integer.MAX_VALUE),
+                    SeasonClock.fraction(generation.getMostSignificantBits(), posB, 0), posB);
         });
         for (int rank = 0; rank < ranked.size(); rank++) {
             ranked.get(rank).putInt("rank", rank);
@@ -236,6 +240,29 @@ public final class GenerationCanopyData {
             }
         }
         return parent;
+    }
+    /** BFS over the immutable generation-only parent graph; no world or calendar reads. */
+    private static Map<BlockPos, Integer> supportDepths(Map<BlockPos, BlockPos> parents,
+                                                         Map<BlockPos, BlockState> leaves) {
+        Map<BlockPos, List<BlockPos>> children = new HashMap<>();
+        Map<BlockPos, Integer> depths = new HashMap<>();
+        java.util.ArrayDeque<BlockPos> queue = new java.util.ArrayDeque<>();
+        for (var entry : parents.entrySet()) {
+            BlockPos parent = entry.getValue();
+            if (!leaves.containsKey(parent)) {
+                depths.put(entry.getKey(), 0);
+                queue.addLast(entry.getKey());
+            } else children.computeIfAbsent(parent, ignored -> new java.util.ArrayList<>()).add(entry.getKey());
+        }
+        while (!queue.isEmpty()) {
+            BlockPos parent = queue.removeFirst();
+            int depth = depths.get(parent);
+            for (BlockPos child : children.getOrDefault(parent, List.of())) {
+                depths.put(child, depth + 1);
+                queue.addLast(child);
+            }
+        }
+        return depths;
     }
     /** Pure NBT/coordinate validation: no registry, level, chunk or loader access. */
     static boolean validatePayload(CompoundTag data, net.minecraft.world.level.ChunkPos chunk,
@@ -352,6 +379,7 @@ public final class GenerationCanopyData {
         ListTag leaves = data.getList("leaves", Tag.TAG_COMPOUND);
         boolean changed = false;
         Set<BlockPos> canopySnow = new HashSet<>();
+        List<BlockPos> unsupportedKept = new java.util.ArrayList<>();
         for (Tag value : leaves) {
             CompoundTag item = (CompoundTag) value;
             if (!item.hasUUID("generation")) continue;
@@ -439,6 +467,9 @@ public final class GenerationCanopyData {
             double shedDeadline = SpringBirthSchedule.rankedDeadline(profile.shedStart(),
                     profile.shedEnd() - profile.shedStart(), rank, count, shedHash);
             if (!SpringBirthSchedule.initialLeafAbsent(phase, deadline, shedDeadline)) {
+                // Unsupported leaves have no restoration authority. Only remove one
+                // if the finished seasonal filtering leaves it completely isolated.
+                if (!restorable) unsupportedKept.add(pos);
                 item.putInt("status", 2); changed = true; continue;
             }
             if (!restorable) {
@@ -459,6 +490,13 @@ public final class GenerationCanopyData {
             ledger.record(tree, pos, supportPos, actual, support, targetCycle, deadline);
             item.putInt("status", 1); item.putLong("targetCycle", targetCycle);
             item.putDouble("deadline", deadline); changed = true;
+        }
+        // Do not leave an unsupported native edge leaf floating after its neighbors
+        // were season-filtered. These terminal cells never acquire a repair ticket.
+        for (BlockPos pos : unsupportedKept) {
+            if (isolatedWithinChunk(chunk, pos)
+                    && !removeBeforePublication(level, chunk, pos, canopySnow))
+                throw new IllegalStateException("Could not clear isolated generated leaf: " + pos);
         }
         // SnowAndFreeze runs after FEATURES, while the native canopy is still present.
         // Move only snow actually supported by leaves removed in this admission.
@@ -491,6 +529,18 @@ public final class GenerationCanopyData {
         // LevelChunk maintains section/heightmap state; schedule the native light update
         // without asking the server chunk cache to load or await anything.
         level.getChunkSource().getLightEngine().checkBlock(pos);
+        return true;
+    }
+    private static boolean isolatedWithinChunk(LevelChunk chunk, BlockPos pos) {
+        if (!(chunk.getBlockState(pos).getBlock() instanceof DynamicLeavesBlock)) return false;
+        for (Direction direction : Direction.values()) {
+            BlockPos neighbor = pos.relative(direction);
+            // An unpublished neighbor cannot safely be read through ServerLevel.
+            if (!chunk.getPos().equals(new net.minecraft.world.level.ChunkPos(neighbor))) return false;
+            BlockState state = chunk.getBlockState(neighbor);
+            if (state.getBlock() instanceof DynamicLeavesBlock || state.getBlock() instanceof BranchBlock)
+                return false;
+        }
         return true;
     }
     private static void settleCanopySnow(ServerLevel level, LevelChunk chunk, Set<BlockPos> canopySnow) {
