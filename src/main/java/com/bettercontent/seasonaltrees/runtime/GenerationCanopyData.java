@@ -369,18 +369,26 @@ public final class GenerationCanopyData {
                     profile.shedStart(), profile.shedEnd());
             SeasonalLedger.Tree known = ledger.find(root);
             if (known != null && (!known.incarnation.equals(generation) || !known.species.equals(species))) continue;
-            if (chunk.getPos().equals(new net.minecraft.world.level.ChunkPos(root)) || level.hasChunkAt(root)) {
-                BlockState rootState = chunk.getPos().equals(new net.minecraft.world.level.ChunkPos(root))
-                        ? chunk.getBlockState(root) : level.getBlockState(root);
+            // Load is posted before this FULL future completes. hasChunkAt/getBlockState
+            // can recursively await that future (or a neighbor's), deadlocking publication.
+            var rootChunkPos = new net.minecraft.world.level.ChunkPos(root);
+            LevelChunk publishedRoot = level.getChunkSource().getChunkNow(rootChunkPos.x, rootChunkPos.z);
+            LevelChunk rootView = chunk.getPos().equals(rootChunkPos) ? chunk : publishedRoot;
+            if (rootView != null) {
+                BlockState rootState = rootView.getBlockState(root);
                 if (!(rootState.getBlock() instanceof com.ferreusveritas.dynamictrees.block.rooty.RootyBlock rootBlock)) {
                     ledger.tombstoneGeneration(generation); continue;
                 }
-                BlockPos trunk = root.relative(rootBlock.getTrunkDirection(level, root));
-                if (chunk.getPos().equals(new net.minecraft.world.level.ChunkPos(trunk))
-                        || level.hasChunkAt(trunk)) {
-                    Species live = rootBlock.getSpecies(rootState, level, root);
-                    if (live == null || !species.equals(live.getRegistryName())) {
-                        ledger.tombstoneGeneration(generation); continue;
+                // Native species resolution reads through LevelAccessor. Only invoke it
+                // for published root/trunk chunks; the immutable generation receipt is
+                // already authoritative when a crown's root is not yet available.
+                if (publishedRoot != null) {
+                    BlockPos trunk = root.relative(rootBlock.getTrunkDirection(level, root));
+                    if (level.getChunkSource().getChunkNow(trunk.getX() >> 4, trunk.getZ() >> 4) != null) {
+                        Species live = rootBlock.getSpecies(rootState, level, root);
+                        if (live == null || !species.equals(live.getRegistryName())) {
+                            ledger.tombstoneGeneration(generation); continue;
+                        }
                     }
                 }
             }
@@ -430,7 +438,7 @@ public final class GenerationCanopyData {
             if (!restorable) {
                 // A genuine new native leaf without a root-owned path is still season-filtered,
                 // but must never mint a restoration ticket through somebody else's canopy.
-                if (!level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2))
+                if (!removeBeforePublication(level, chunk, pos))
                     throw new IllegalStateException("Could not initialize unsupported generated leaf before chunk publication: " + pos);
                 item.putInt("status", 2); changed = true;
                 continue;
@@ -440,13 +448,24 @@ public final class GenerationCanopyData {
             }
             ledger.freezeTiming(tree, cycle, profile, tropical);
             BlockPos supportPos = BlockPos.of(item.getLong("support"));
-            if (!level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2))
+            if (!removeBeforePublication(level, chunk, pos))
                 throw new IllegalStateException("Could not initialize generated leaf before chunk publication: " + pos);
             ledger.record(tree, pos, supportPos, actual, support, targetCycle, deadline);
             item.putInt("status", 1); item.putLong("targetCycle", targetCycle);
             item.putDouble("deadline", deadline); changed = true;
         }
         if (changed) replace(chunk, data);
+    }
+    private static boolean removeBeforePublication(ServerLevel level, LevelChunk chunk, BlockPos pos) {
+        // No Level.setBlock: it requests the unfinished FULL chunk again. This mutation
+        // remains synchronous before first visibility, never a later stripping queue.
+        if (!chunk.getPos().equals(new net.minecraft.world.level.ChunkPos(pos)))
+            throw new IllegalArgumentException("Canopy receipt belongs to another chunk: " + pos);
+        if (chunk.setBlockState(pos, Blocks.AIR.defaultBlockState(), false) == null) return false;
+        // LevelChunk maintains section/heightmap state; schedule the native light update
+        // without asking the server chunk cache to load or await anything.
+        level.getChunkSource().getLightEngine().checkBlock(pos);
+        return true;
     }
     private static boolean eligiblePending(CompoundTag item) {
         if (item.getBoolean("header") || item.getInt("status") != 0) return false;

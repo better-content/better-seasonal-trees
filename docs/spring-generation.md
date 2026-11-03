@@ -1,5 +1,11 @@
 # Spring generation — source and isolated-unit handoff, 2026-11-02 13:29 UTC
 
+## Consolidation correction — 2026-11-03
+
+The authorized fresh-pack Smoke exposed a publication deadlock: `hasChunkAt` did not mean a FULL chunk was ready, and level block reads/writes recursively awaited chunks still inside `ChunkEvent.Load`. Admission now reads the supplied chunk directly and uses `getChunkNow` for other, fully published chunks. Native species resolution through `LevelAccessor` is restricted to published root/trunk chunks; immutable generation receipts retain the existing unloaded-root semantics, and live restoration still validates support/topology. Known root removal and generation tombstones remain authoritative.
+
+Initial leaf removal uses the supplied chunk's state setter, retaining native section/heightmap maintenance and scheduling a light check. It is still synchronous before publication, not a later stripping queue. Receipt statuses, species timing, one-use restoration, geometry bounds and ordinary tick budgets are unchanged. This fixes the observed startup path; passing compilation or basic pack Smoke is not first-visibility/visual or seasonal-cycle qualification. The historical source-only evidence below is retained as such.
+
 The final source removes the arbitrary8,192/65,536 cutoffs and includes every exact newly generated leaf in seasonal initialization. Compilation and21 isolated unit tests pass. This is implementation evidence for the supported normal DT world-generation path, not native/visual acceptance.
 
 ## Scope and result
