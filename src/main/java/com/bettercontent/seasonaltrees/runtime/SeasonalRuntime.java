@@ -1030,8 +1030,31 @@ public final class SeasonalRuntime {
                     if (actual.getBlock() != candidate.state().getBlock()) continue;
                     BlockState actualSupport = level.getBlockState(candidate.support());
                     if (actualSupport.getBlock() != candidate.supportState().getBlock()) continue;
+                    BlockPos snowPos = candidate.pos().above();
+                    BlockState snow = level.getBlockState(snowPos);
+                    // Reserve all three mutation attempts before shedding, so the snow
+                    // correction cannot bypass the ordinary per-tick mutation budget.
+                    if (snow.is(net.minecraft.world.level.block.Blocks.SNOW)
+                            && (long) mutations + 3 > tickMutationLimit) {
+                        deferred.add(candidate); break;
+                    }
                     if (!mutate()) { deferred.add(candidate); break; }
                     if (level.setBlock(candidate.pos(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2)) {
+                        // Flag 2 does not notify the snow above this formerly supporting leaf.
+                        // Preserve its layer count and settle it on the newly exposed surface.
+                        if (snow.is(net.minecraft.world.level.block.Blocks.SNOW)
+                                && !snow.canSurvive(level, snowPos)) {
+                            mutate();
+                            if (level.setBlock(snowPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3)) {
+                                BlockPos ground = level.getHeightmapPos(
+                                        net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, snowPos);
+                                if (ground.getY() < snowPos.getY()
+                                        && level.getBiome(ground).value().shouldSnow(level, ground)) {
+                                    mutate();
+                                    level.setBlock(ground, snow, 3);
+                                }
+                            }
+                        }
                         ledger.record(tree, candidate.pos(), candidate.support(), actual,
                                 actualSupport, cycle + 1, candidate.restorationDeadline());
                     }

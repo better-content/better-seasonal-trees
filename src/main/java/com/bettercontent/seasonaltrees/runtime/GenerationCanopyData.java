@@ -28,8 +28,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.WorldGenRegion;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.world.level.block.SnowyDirtBlock;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ImposterProtoChunk;
@@ -346,6 +351,7 @@ public final class GenerationCanopyData {
         ledger.observeCycle(reading.cycleTick(), reading.cycleDuration(), level.getGameTime());
         ListTag leaves = data.getList("leaves", Tag.TAG_COMPOUND);
         boolean changed = false;
+        Set<BlockPos> canopySnow = new HashSet<>();
         for (Tag value : leaves) {
             CompoundTag item = (CompoundTag) value;
             if (!item.hasUUID("generation")) continue;
@@ -438,7 +444,7 @@ public final class GenerationCanopyData {
             if (!restorable) {
                 // A genuine new native leaf without a root-owned path is still season-filtered,
                 // but must never mint a restoration ticket through somebody else's canopy.
-                if (!removeBeforePublication(level, chunk, pos))
+                if (!removeBeforePublication(level, chunk, pos, canopySnow))
                     throw new IllegalStateException("Could not initialize unsupported generated leaf before chunk publication: " + pos);
                 item.putInt("status", 2); changed = true;
                 continue;
@@ -448,12 +454,15 @@ public final class GenerationCanopyData {
             }
             ledger.freezeTiming(tree, cycle, profile, tropical);
             BlockPos supportPos = BlockPos.of(item.getLong("support"));
-            if (!removeBeforePublication(level, chunk, pos))
+            if (!removeBeforePublication(level, chunk, pos, canopySnow))
                 throw new IllegalStateException("Could not initialize generated leaf before chunk publication: " + pos);
             ledger.record(tree, pos, supportPos, actual, support, targetCycle, deadline);
             item.putInt("status", 1); item.putLong("targetCycle", targetCycle);
             item.putDouble("deadline", deadline); changed = true;
         }
+        // SnowAndFreeze runs after FEATURES, while the native canopy is still present.
+        // Move only snow actually supported by leaves removed in this admission.
+        settleCanopySnow(level, chunk, canopySnow);
         if (changed) replace(chunk, data);
     }
     private static LevelChunk publishedChunk(ServerLevel level, int x, int z) {
@@ -469,16 +478,48 @@ public final class GenerationCanopyData {
         var ready = future.getNow(null);
         return ready == null ? null : ready.left().orElse(null);
     }
-    private static boolean removeBeforePublication(ServerLevel level, LevelChunk chunk, BlockPos pos) {
+    private static boolean removeBeforePublication(ServerLevel level, LevelChunk chunk, BlockPos pos,
+                                                    Set<BlockPos> canopySnow) {
         // No Level.setBlock: it requests the unfinished FULL chunk again. This mutation
         // remains synchronous before first visibility, never a later stripping queue.
         if (!chunk.getPos().equals(new net.minecraft.world.level.ChunkPos(pos)))
             throw new IllegalArgumentException("Canopy receipt belongs to another chunk: " + pos);
+        BlockPos above = pos.above();
+        boolean snowAbove = above.getY() < chunk.getMaxBuildHeight() && chunk.getBlockState(above).is(Blocks.SNOW);
         if (chunk.setBlockState(pos, Blocks.AIR.defaultBlockState(), false) == null) return false;
+        if (snowAbove) canopySnow.add(above);
         // LevelChunk maintains section/heightmap state; schedule the native light update
         // without asking the server chunk cache to load or await anything.
         level.getChunkSource().getLightEngine().checkBlock(pos);
         return true;
+    }
+    private static void settleCanopySnow(ServerLevel level, LevelChunk chunk, Set<BlockPos> canopySnow) {
+        for (BlockPos snow : canopySnow) {
+            if (!chunk.getBlockState(snow).is(Blocks.SNOW) || !chunk.getBlockState(snow.below()).isAir()) continue;
+            BlockState layer = chunk.getBlockState(snow);
+            if (chunk.setBlockState(snow, Blocks.AIR.defaultBlockState(), false) == null)
+                throw new IllegalStateException("Could not clear unsupported generated canopy snow: " + snow);
+            level.getChunkSource().getLightEngine().checkBlock(snow);
+            int y = chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, snow.getX() & 15, snow.getZ() & 15);
+            if (y >= snow.getY() || y <= chunk.getMinBuildHeight() || y >= chunk.getMaxBuildHeight()) continue;
+            BlockPos ground = new BlockPos(snow.getX(), y, snow.getZ());
+            BlockPos below = ground.below();
+            BlockState support = chunk.getBlockState(below);
+            if (!chunk.getBlockState(ground).isAir()
+                    || !chunk.getNoiseBiome(ground.getX() >> 2, ground.getY() >> 2,
+                            ground.getZ() >> 2).value().coldEnoughToSnow(ground)
+                    || level.getChunkSource().getLightEngine().getLayerListener(LightLayer.BLOCK)
+                            .getLightValue(ground) >= 10
+                    || support.is(BlockTags.SNOW_LAYER_CANNOT_SURVIVE_ON)
+                    || !(support.is(BlockTags.SNOW_LAYER_CAN_SURVIVE_ON)
+                            || Block.isFaceFull(support.getCollisionShape(chunk, below), Direction.UP))) continue;
+            // The source layer already existed. Never invent snow in a column without one.
+            if (chunk.setBlockState(ground, layer, false) == null)
+                throw new IllegalStateException("Could not settle generated canopy snow: " + ground);
+            if (support.hasProperty(SnowyDirtBlock.SNOWY))
+                chunk.setBlockState(below, support.setValue(SnowyDirtBlock.SNOWY, true), false);
+            level.getChunkSource().getLightEngine().checkBlock(ground);
+        }
     }
     private static boolean eligiblePending(CompoundTag item) {
         if (item.getBoolean("header") || item.getInt("status") != 0) return false;
