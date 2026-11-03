@@ -4,7 +4,7 @@
   "package": "com.bettercontent.seasonaltrees.mixin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "better_seasonal_trees.refmap.json",
-  "mixins": ["RootyDormancyMixin", "LeavesDormancyMixin", "RootRemovalMixin", "JoCodeBirthScopeMixin", "WorldGenLeafWritesMixin", "LevelChunkBirthPromotionMixin"],
+  "mixins": ["RootyDormancyMixin", "LeavesDormancyMixin", "RootRemovalMixin", "JoCodeBirthScopeMixin", "WorldGenLeafWritesMixin", "LevelChunkBirthPromotionMixin", "ChunkMapReadAccess"],
   "client": ["client.NativeCherryParticlesMixin"],
   "injectors": {"defaultRequire": 1}
 }

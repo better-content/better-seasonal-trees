@@ -372,7 +372,7 @@ public final class GenerationCanopyData {
             // Load is posted before this FULL future completes. hasChunkAt/getBlockState
             // can recursively await that future (or a neighbor's), deadlocking publication.
             var rootChunkPos = new net.minecraft.world.level.ChunkPos(root);
-            LevelChunk publishedRoot = level.getChunkSource().getChunkNow(rootChunkPos.x, rootChunkPos.z);
+            LevelChunk publishedRoot = publishedChunk(level, rootChunkPos.x, rootChunkPos.z);
             LevelChunk rootView = chunk.getPos().equals(rootChunkPos) ? chunk : publishedRoot;
             if (rootView != null) {
                 BlockState rootState = rootView.getBlockState(root);
@@ -384,7 +384,7 @@ public final class GenerationCanopyData {
                 // already authoritative when a crown's root is not yet available.
                 if (publishedRoot != null) {
                     BlockPos trunk = root.relative(rootBlock.getTrunkDirection(level, root));
-                    if (level.getChunkSource().getChunkNow(trunk.getX() >> 4, trunk.getZ() >> 4) != null) {
+                    if (publishedChunk(level, trunk.getX() >> 4, trunk.getZ() >> 4) != null) {
                         Species live = rootBlock.getSpecies(rootState, level, root);
                         if (live == null || !species.equals(live.getRegistryName())) {
                             ledger.tombstoneGeneration(generation); continue;
@@ -455,6 +455,19 @@ public final class GenerationCanopyData {
             item.putDouble("deadline", deadline); changed = true;
         }
         if (changed) replace(chunk, data);
+    }
+    private static LevelChunk publishedChunk(ServerLevel level, int x, int z) {
+        // A cached LevelChunk (getChunkNow) is not a publication guarantee in this
+        // pack. Read the existing holder's FULL-accessibility future instead.
+        // Do not call ServerChunkCache.getChunkFuture: it managed-blocks on the
+        // main thread even with create=false. This path adds no tickets or work.
+        var map = (com.bettercontent.seasonaltrees.mixin.ChunkMapReadAccess) level.getChunkSource().chunkMap;
+        var holder = map.betterSeasonalTrees$visibleHolder(net.minecraft.world.level.ChunkPos.asLong(x, z));
+        if (holder == null) return null;
+        var future = holder.getFullChunkFuture();
+        if (!future.isDone() || future.isCompletedExceptionally()) return null;
+        var ready = future.getNow(null);
+        return ready == null ? null : ready.left().orElse(null);
     }
     private static boolean removeBeforePublication(ServerLevel level, LevelChunk chunk, BlockPos pos) {
         // No Level.setBlock: it requests the unfinished FULL chunk again. This mutation
