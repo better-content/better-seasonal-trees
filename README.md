@@ -2,7 +2,11 @@
 
 Experimental seasonal foliage and blossom addon for **Minecraft 1.20.1 / Forge 47.4.22**, **Dynamic Trees 1.4.10** and **Serene Seasons 9.1.0.2**.
 
-The current implementation target is a **sacrificial survival playthrough of the modpack**, not a release-certified build. The full-catalogue production source was compiled and assembled on2026-11-02; the latest user direction permits implementation and focused isolated unit tests only. Integration/native testing, game/mod-loader launches, loader probes and smoke runs remain prohibited. Earlier pilot evidence does not verify this newer implementation.
+The 2026-11-02 source batch targeted a **sacrificial survival playthrough of the modpack**, not a release-certified build. Its implementation-only and focused-unit limits were historical batch restrictions; earlier pilot evidence does not verify the newer implementation.
+
+## Current consolidation scope (2026-11-03)
+
+The later Better Content consolidation authorization selects a fresh source rebuild, local candidate commits and fresh-world experimental pack activation. Existing source/unit checks and exact-artifact pack Smoke are authorized under coordinator control. Gate-controlled source publication requires every applicable gate; this is no gate waiver or permission to upload restricted pack binaries. No qualification or publication success follows from this scope update. Existing worlds and saved calendars remain protected: no old-world repair/reset, owner-native seasonal-cycle campaign, Soak, Tele Soak or visual acceptance is claimed. All foliage, first-visibility, restoration and budget invariants below still apply.
 
 ## New-world spring initialization
 
@@ -26,7 +30,7 @@ The data catalogue contains **48 profiles**: 31 temperate, four tropical dry-dec
 
 Supported catalogue families include Dynamic Trees, Nature's Spirit, Fruits Delight, Quark and Better Hexerei Dynamic Trees. See `catalogue-draft/inventory.json` for exact IDs. Cinnamon and clove could not be identified as installed Dynamic Trees species and are not assigned invented profiles. Fig has no external blossom effect; both mahoganies have no blossom effect.
 
-## Building an artifact
+## Historical source-batch artifact notes
 
 Use the existing Java 17 SDK:
 
@@ -35,7 +39,7 @@ JAVA_HOME="$HOME/.sdkman/candidates/java/17.0.17-tem" \
 TMPDIR="$HOME/.tmp" ./gradlew assemble
 ```
 
-The earlier, pre-spring-initialization runtime artifact is `build/libs/better-seasonal-trees-0.1.0.jar` (236,740 bytes; SHA256 `a5cd5118ace48fb18f983441ecf985c827c0553e0fcc302bbd678942202b8809`). Compilation/assembly is not gameplay verification. Only isolated unit tests without game/mod-loader bootstrap and necessary compilation are permitted. Do not run historical integration/native, Forge GameTest, visual or smoke tasks, or aggregate tasks that invoke them. The clarification does not assign new work to released workers.
+The earlier, pre-spring-initialization runtime artifact is `build/libs/better-seasonal-trees-0.1.0.jar` (236,740 bytes; SHA256 `a5cd5118ace48fb18f983441ecf985c827c0553e0fcc302bbd678942202b8809`). It is historical evidence, not the fresh consolidation artifact. Compilation/assembly is not gameplay verification. The earlier batch allowed only isolated unit tests and necessary compilation; the later consolidation additionally requires its authorized exact-artifact pack Smoke. Owner-native, Forge GameTest, seasonal-cycle and visual campaigns remain outside that authorization.
 
 The mod is intended for both client and server. Keep their versions matched. This repository does not automatically deploy the artifact into the modpack.
 
@@ -55,4 +59,4 @@ Use a **new disposable world**, not an established save. Save/load, long-season 
 
 **Do not simply delete the JAR to reverse winter defoliation.** Removing the code cannot restore unloaded trees' missing leaves. Keep a backup and keep the addon installed while affected loaded roots are restored through the disable/reconciliation path. This path is not a substitute for a backup or a guaranteed migration of an established world.
 
-Existing test failures and the precise scope of prior successes remain recorded in `docs/qualification-status.md`. Deferred validation must not be reported as passing. No existing player worlds or pack distribution have been modified by this implementation work.
+Existing test failures and the precise scope of prior successes remain recorded in `docs/qualification-status.md`. Deferred validation must not be reported as passing. The earlier implementation batch did not modify existing player worlds or distribute a pack; the selected consolidation candidate remains subject to its fresh rebuild, Smoke and publication gates.
