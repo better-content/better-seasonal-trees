@@ -100,7 +100,7 @@ repositories {
 dependencies {
     minecraft 'net.minecraftforge:forge:1.20.1-47.4.22'
     implementation fg.deobf('curse.maven:dynamic-trees-252818:7502488')
-    implementation fg.deobf('curse.maven:serene-seasons-291874:6398227')
+    implementation fg.deobf('curse.maven:serene-seasons-291874:8246702')
     implementation fg.deobf('curse.maven:glitchcore-955399:5787839')
     runtimeOnly fg.deobf('curse.maven:patchouli-306770:7731017')
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
