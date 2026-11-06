@@ -45,6 +45,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 /** Forge chunk-data receipt for exact native leaves written by a new DT tree. No worker touches SavedData. */
 public final class GenerationCanopyData {
     public static final String KEY = "better_seasonal_trees:birth";
+    private static final ResourceLocation NATURAL_COBWEB = new ResourceLocation("projectvibrantjourneys", "natural_cobweb");
     private static final int CHUNK_WIDTH = 16;
     private static final int FEATURE_DIAMETER_CHUNKS = 3; // FEATURES writable radius one.
     static long chunkSlots(int minBuildHeight, int maxBuildHeight) {
@@ -379,6 +380,7 @@ public final class GenerationCanopyData {
         ListTag leaves = data.getList("leaves", Tag.TAG_COMPOUND);
         boolean changed = false;
         Set<BlockPos> canopySnow = new HashSet<>();
+        Set<BlockPos> canopyWebs = new HashSet<>();
         List<BlockPos> unsupportedKept = new java.util.ArrayList<>();
         for (Tag value : leaves) {
             CompoundTag item = (CompoundTag) value;
@@ -475,7 +477,7 @@ public final class GenerationCanopyData {
             if (!restorable) {
                 // A genuine new native leaf without a root-owned path is still season-filtered,
                 // but must never mint a restoration ticket through somebody else's canopy.
-                if (!removeBeforePublication(level, chunk, pos, canopySnow))
+                if (!removeBeforePublication(level, chunk, pos, canopySnow, canopyWebs))
                     throw new IllegalStateException("Could not initialize unsupported generated leaf before chunk publication: " + pos);
                 item.putInt("status", 2); changed = true;
                 continue;
@@ -485,7 +487,7 @@ public final class GenerationCanopyData {
             }
             ledger.freezeTiming(tree, cycle, profile, tropical);
             BlockPos supportPos = BlockPos.of(item.getLong("support"));
-            if (!removeBeforePublication(level, chunk, pos, canopySnow))
+            if (!removeBeforePublication(level, chunk, pos, canopySnow, canopyWebs))
                 throw new IllegalStateException("Could not initialize generated leaf before chunk publication: " + pos);
             ledger.record(tree, pos, supportPos, actual, support, targetCycle, deadline);
             item.putInt("status", 1); item.putLong("targetCycle", targetCycle);
@@ -495,12 +497,13 @@ public final class GenerationCanopyData {
         // were season-filtered. These terminal cells never acquire a repair ticket.
         for (BlockPos pos : unsupportedKept) {
             if (isolatedWithinChunk(chunk, pos)
-                    && !removeBeforePublication(level, chunk, pos, canopySnow))
+                    && !removeBeforePublication(level, chunk, pos, canopySnow, canopyWebs))
                 throw new IllegalStateException("Could not clear isolated generated leaf: " + pos);
         }
         // SnowAndFreeze runs after FEATURES, while the native canopy is still present.
         // Move only snow actually supported by leaves removed in this admission.
         settleCanopySnow(level, chunk, canopySnow);
+        clearUnsupportedCanopyWebs(level, chunk, canopyWebs);
         if (changed) replace(chunk, data);
     }
     private static LevelChunk publishedChunk(ServerLevel level, int x, int z) {
@@ -516,8 +519,11 @@ public final class GenerationCanopyData {
         var ready = future.getNow(null);
         return ready == null ? null : ready.left().orElse(null);
     }
+    static boolean isNaturalCobweb(BlockState state) {
+        return NATURAL_COBWEB.equals(ForgeRegistries.BLOCKS.getKey(state.getBlock()));
+    }
     private static boolean removeBeforePublication(ServerLevel level, LevelChunk chunk, BlockPos pos,
-                                                    Set<BlockPos> canopySnow) {
+                                                    Set<BlockPos> canopySnow, Set<BlockPos> canopyWebs) {
         // No Level.setBlock: it requests the unfinished FULL chunk again. This mutation
         // remains synchronous before first visibility, never a later stripping queue.
         if (!chunk.getPos().equals(new net.minecraft.world.level.ChunkPos(pos)))
@@ -526,6 +532,9 @@ public final class GenerationCanopyData {
         boolean snowAbove = above.getY() < chunk.getMaxBuildHeight() && chunk.getBlockState(above).is(Blocks.SNOW);
         if (chunk.setBlockState(pos, Blocks.AIR.defaultBlockState(), false) == null) return false;
         if (snowAbove) canopySnow.add(above);
+        BlockPos below = pos.below();
+        if (below.getY() >= chunk.getMinBuildHeight() && isNaturalCobweb(chunk.getBlockState(below)))
+            canopyWebs.add(below);
         // LevelChunk maintains section/heightmap state; schedule the native light update
         // without asking the server chunk cache to load or await anything.
         level.getChunkSource().getLightEngine().checkBlock(pos);
@@ -542,6 +551,26 @@ public final class GenerationCanopyData {
                 return false;
         }
         return true;
+    }
+    private static void clearUnsupportedCanopyWebs(ServerLevel level, LevelChunk chunk, Set<BlockPos> canopyWebs) {
+        for (BlockPos web : canopyWebs) {
+            if (!isNaturalCobweb(chunk.getBlockState(web))) continue;
+            boolean supported = false, boundary = false;
+            for (Direction direction : Direction.values()) {
+                BlockPos neighbor = web.relative(direction);
+                // Never request an unpublished adjacent chunk during FULL promotion.
+                if (!chunk.getPos().equals(new net.minecraft.world.level.ChunkPos(neighbor))) {
+                    boundary = true; break;
+                }
+                if (chunk.getBlockState(neighbor).getBlock() instanceof LeavesBlock) {
+                    supported = true; break;
+                }
+            }
+            if (supported || boundary) continue;
+            if (chunk.setBlockState(web, Blocks.AIR.defaultBlockState(), false) == null)
+                throw new IllegalStateException("Could not clear unsupported generated canopy web: " + web);
+            level.getChunkSource().getLightEngine().checkBlock(web);
+        }
     }
     private static void settleCanopySnow(ServerLevel level, LevelChunk chunk, Set<BlockPos> canopySnow) {
         for (BlockPos snow : canopySnow) {

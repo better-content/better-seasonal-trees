@@ -1032,14 +1032,33 @@ public final class SeasonalRuntime {
                     if (actualSupport.getBlock() != candidate.supportState().getBlock()) continue;
                     BlockPos snowPos = candidate.pos().above();
                     BlockState snow = level.getBlockState(snowPos);
-                    // Reserve all three mutation attempts before shedding, so the snow
-                    // correction cannot bypass the ordinary per-tick mutation budget.
-                    if (snow.is(net.minecraft.world.level.block.Blocks.SNOW)
-                            && (long) mutations + 3 > tickMutationLimit) {
+                    BlockPos webPos = candidate.pos().below();
+                    boolean canopyWeb = GenerationCanopyData.isNaturalCobweb(level.getBlockState(webPos));
+                    // PVJ webs check all six leaves on neighbor updates, but flag 2 intentionally
+                    // skips those updates. Check only a web directly under this removed leaf.
+                    if (canopyWeb) {
+                        if ((long) inspections + 6 > tickInspectionLimit) { deferred.add(candidate); break; }
+                        boolean neighborsLoaded = true;
+                        for (Direction direction : Direction.values())
+                            if (!level.hasChunkAt(webPos.relative(direction))) { neighborsLoaded = false; break; }
+                        if (!neighborsLoaded) { deferred.add(candidate); continue; }
+                    }
+                    // Reserve snow and web mutations before shedding, within the existing budget.
+                    int reserved = 1 + (snow.is(net.minecraft.world.level.block.Blocks.SNOW) ? 2 : 0)
+                            + (canopyWeb ? 1 : 0);
+                    if ((long) mutations + reserved > tickMutationLimit) {
                         deferred.add(candidate); break;
                     }
                     if (!mutate()) { deferred.add(candidate); break; }
                     if (level.setBlock(candidate.pos(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2)) {
+                        if (canopyWeb) {
+                            inspections += 6;
+                            BlockState web = level.getBlockState(webPos);
+                            if (GenerationCanopyData.isNaturalCobweb(web) && !web.canSurvive(level, webPos)) {
+                                mutate();
+                                level.setBlock(webPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+                            }
+                        }
                         // Flag 2 does not notify the snow above this formerly supporting leaf.
                         // Preserve its layer count and settle it on the newly exposed surface.
                         if (snow.is(net.minecraft.world.level.block.Blocks.SNOW)
