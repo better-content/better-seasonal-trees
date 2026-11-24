@@ -57,14 +57,18 @@ public final class SeasonalPilotGameTests {
         int[] beforeLight = new int[2];
         BlockPos[] prunedAfterRestore = new BlockPos[2];
         h.runAtTickTime(1, () -> {
-            h.assertTrue(SeasonalCatalogue.all().size() == 3, "Gate A must load exactly the three pilot profiles");
+            h.assertTrue(SeasonalCatalogue.all().size() == 11
+                    && SeasonalCatalogue.profile(new ResourceLocation("dynamictrees:birch")) != null
+                    && SeasonalCatalogue.profile(new ResourceLocation("dynamictrees:cherry")) != null
+                    && SeasonalCatalogue.profile(new ResourceLocation("dynamictrees:spruce")) != null,
+                    "Native core-only fixture must load its 11 valid profiles including the three pilot species");
             var commands = level.getServer().getCommands();
             var operator = level.getServer().createCommandSourceStack().withPermission(2);
             var command = commands.getDispatcher().getRoot().getChild("seasonaltrees");
             h.assertTrue(command != null && command.canUse(operator)
                     && !command.canUse(operator.withPermission(0)), "Seasonal commands must be operator-only");
-            h.assertTrue(commands.performPrefixedCommand(operator, "seasonaltrees validate") == 3,
-                    "Live catalogue/leaf-reference validation failed");
+            h.assertTrue(commands.performPrefixedCommand(operator, "seasonaltrees validate") == 11,
+                    "Live validation must cover all 11 loaded core-fixture species/leaf references");
             setPhase(level, 4.0);
             for (int i = 0; i < roots.size(); i++) generate(h, roots.get(i), species[i]);
         });
