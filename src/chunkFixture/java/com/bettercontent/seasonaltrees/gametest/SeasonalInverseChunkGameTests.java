@@ -36,7 +36,9 @@ import java.util.Set;
 @GameTestHolder(BetterSeasonalTrees.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class SeasonalInverseChunkGameTests {
-    private static final BlockPos ROOT = new BlockPos(2047, 220, 2047);
+    // Keep the forced-chunk ring disjoint from the damage fixture, even if that batch fails.
+    private static final BlockPos ROOT = new BlockPos(2047, 220, 3071);
+    private static final long TREE_SEED = 8675309L + new BlockPos(2047, 220, 2047).asLong();
     private static final ChunkPos ROOT_CHUNK = new ChunkPos(ROOT);
     private static final ChunkPos CROWN_CHUNK = new ChunkPos(ROOT.east());
     private static final ResourceLocation BIRCH = new ResourceLocation("dynamictrees:birch");
@@ -122,21 +124,28 @@ public final class SeasonalInverseChunkGameTests {
             pendingCell[0] = qualified.pos;
             h.assertTrue(SeasonalLedger.get(level).pendingTicketOwnersAt(pendingCell[0])
                     .contains(ROOT.asLong()), "Pending crown position lacks persisted owner index");
-            level.getChunkSource().addRegionTicket(CROWN_BORDER, CROWN_CHUNK, 0, CROWN_CHUNK);
-            crownHeld[0] = true;
             for (ChunkPos chunk : ownedForced) {
                 h.assertTrue(level.setChunkForced(chunk.x, chunk.z, false),
                     "Could not release inverse preparation ticket " + chunk);
             }
             ownedForced.clear();
         });
-        h.runAtTickTime(1300, () -> {
+        h.runAtTickTime(1200, () -> {
+            h.assertTrue(!level.getChunkSource().hasChunk(ROOT_CHUNK.x, ROOT_CHUNK.z) &&
+                    level.getChunkSource().getChunkNow(ROOT_CHUNK.x, ROOT_CHUNK.z) == null,
+                "Owner root did not unload after releasing the preparation tickets: "
+                    + level.getChunkSource().chunkMap.getChunkDebugData(ROOT_CHUNK));
+            level.getChunkSource().addRegionTicket(CROWN_BORDER, CROWN_CHUNK, 0, CROWN_CHUNK);
+            crownHeld[0] = true;
+        });
+        h.runAtTickTime(1500, () -> {
             h.assertTrue(level.getChunkSource().hasChunk(CROWN_CHUNK.x, CROWN_CHUNK.z) &&
                     level.getChunkSource().getChunkNow(CROWN_CHUNK.x, CROWN_CHUNK.z) != null,
                 "Inverse crown chunk is not actually FULL-loaded");
             h.assertTrue(!level.getChunkSource().hasChunk(ROOT_CHUNK.x, ROOT_CHUNK.z) &&
                     level.getChunkSource().getChunkNow(ROOT_CHUNK.x, ROOT_CHUNK.z) == null,
-                "Owner root chunk did not actually unload; inverse proof inconclusive");
+                "Owner root chunk did not actually unload; inverse proof inconclusive: "
+                    + level.getChunkSource().chunkMap.getChunkDebugData(ROOT_CHUNK));
             SeasonalLedger.Ticket ticket = SeasonalLedger.get(level).find(ROOT)
                 .tickets.get(pendingCell[0].asLong());
             h.assertTrue(ticket != null && !ticket.consumed && level.getBlockState(pendingCell[0]).isAir(),
@@ -183,7 +192,7 @@ public final class SeasonalInverseChunkGameTests {
         var codes = JoCodeRegistry.getCodes(BIRCH);
         int radius = codes.keySet().stream().min(Comparator.comparingInt(r -> Math.abs(r - 5))).orElseThrow();
         JoCode code = codes.get(radius).get(0);
-        level.random.setSeed(8675309L + ROOT.asLong());
+        level.random.setSeed(TREE_SEED);
         new JoCode(code.toString()).setCareful(true).generate(new GenerationContext(
             LevelContext.create(level), species, ROOT, ROOT.mutable(), level.getBiome(ROOT),
             Direction.NORTH, radius, SafeChunkBounds.ANY));

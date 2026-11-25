@@ -42,6 +42,12 @@ public final class SeasonalDamageGameTests {
         int[] original = new int[4];
         SeasonalLedger.Ticket[] damaged = new SeasonalLedger.Ticket[2];
         BlockPos[] fire = new BlockPos[1];
+        // Test native damage, not the odds of a fire tick choosing a particular thin twig.
+        RandomSource fireRandom = new net.minecraft.world.level.levelgen.LegacyRandomSource(8675309L) {
+            @Override public int nextInt(int bound) {
+                return bound == 250 || bound == 300 ? 0 : super.nextInt(bound);
+            }
+        };
         BlockPos[] container = new BlockPos[1];
         CompoundTag[] containerData = new CompoundTag[1];
         UUID[] felledIncarnation = new UUID[1];
@@ -115,7 +121,17 @@ public final class SeasonalDamageGameTests {
                                 && t.support.getY() > root.getY() + 5 && level.isEmptyBlock(t.support.above()))
                         .max(Comparator.comparingInt(t -> t.support.getY())).orElseThrow();
             }
-            fire[0] = damaged[0].support.above();
+            // A radius-one twig need not support fire above it. Put native fire on
+            // netherrack in an empty adjacent column so it can actually reach the twig.
+            BlockPos twig = damaged[0].support;
+            fire[0] = Arrays.stream(new Direction[]{Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST})
+                    .map(twig::relative)
+                    .filter(pos -> level.isEmptyBlock(pos) && level.isEmptyBlock(pos.below()))
+                    .findFirst().orElseThrow(() -> new AssertionError("No empty ignition column beside native twig"));
+            h.assertTrue(level.getBlockState(twig).isFlammable(level, twig,
+                    Direction.fromDelta(fire[0].getX() - twig.getX(), 0, fire[0].getZ() - twig.getZ())),
+                    "Native test twig is not flammable on the ignition face");
+            level.setBlock(fire[0].below(), Blocks.NETHERRACK.defaultBlockState(), 3);
             BlockPos blast = damaged[1].support;
             level.explode(null, blast.getX() + .5, blast.getY() + .5, blast.getZ() + .5,
                     2.0F, Level.ExplosionInteraction.BLOCK);
@@ -134,13 +150,13 @@ public final class SeasonalDamageGameTests {
         });
         // Fixture supplies repeated ignition, but only the actual vanilla/native fire tick may remove wood.
         for (int time = 505; time <= 650; time += 5) {
-            final int fireTick = time;
             h.runAtTickTime(time, () -> {
                 if (!(level.getBlockState(damaged[0].support).getBlock() instanceof BranchBlock)) return;
                 if (level.isEmptyBlock(fire[0])) level.setBlock(fire[0], Blocks.FIRE.defaultBlockState(), 3);
                 BlockState state = level.getBlockState(fire[0]);
-                if (state.getBlock() == Blocks.FIRE)
-                    ((FireBlock) Blocks.FIRE).tick(state, level, fire[0], RandomSource.create(8675309L + fireTick));
+                h.assertTrue(state.getBlock() == Blocks.FIRE && state.canSurvive(level, fire[0]),
+                        "Fixture ignition did not produce supported native fire");
+                ((FireBlock) Blocks.FIRE).tick(state, level, fire[0], fireRandom);
             });
         }
         h.runAtTickTime(700, () -> {
@@ -148,6 +164,7 @@ public final class SeasonalDamageGameTests {
                     "Native fire did not actually remove its target branch");
             for (BlockPos pos : BlockPos.betweenClosed(roots.get(0).offset(-10, 0, -10), roots.get(0).offset(10, 30, 10)))
                 if (level.getBlockState(pos).getBlock() == Blocks.FIRE) level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+            level.setBlock(fire[0].below(), Blocks.AIR.defaultBlockState(), 3);
             double lastDeadline = roots.stream().map(root -> SeasonalLedger.get(level).find(root))
                     .filter(Objects::nonNull).flatMap(tree -> tree.tickets.values().stream())
                     .mapToDouble(ticket -> ticket.deadline).max().orElseThrow();

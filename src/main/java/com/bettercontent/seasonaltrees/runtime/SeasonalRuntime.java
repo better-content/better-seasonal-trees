@@ -717,9 +717,12 @@ public final class SeasonalRuntime {
         long catalogueRevision = Long.MIN_VALUE;
         RootWork(BlockPos root) { this.root = root.immutable(); }
         boolean advance(ServerLevel level, SeasonalLedger ledger, SeasonClock.Reading clock) {
-            if (!level.hasChunkAt(root)) { releaseOwnership(level); return false; }
+            // Level#getBlockState can renew a level-33 UNKNOWN ticket on a cache
+            // miss. A persistently scheduled root must not keep its own chunk loaded.
+            LevelChunk rootChunk = level.getChunkSource().getChunkNow(root.getX() >> 4, root.getZ() >> 4);
+            if (rootChunk == null) { releaseOwnership(level); return false; }
             if (!inspected()) return true;
-            BlockState rootState = level.getBlockState(root);
+            BlockState rootState = rootChunk.getBlockState(root);
             if (!(rootState.getBlock() instanceof RootyBlock rootBlock)) {
                 releaseOwnership(level); ledger.forget(root); return false;
             }
